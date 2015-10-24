@@ -1,1 +1,7 @@
-Simple programm for adding ledger format transactino to a ledger journal. Better doc will follow ... maybe ...
+Ledger command line accounting - transaction adder in python
+============================================================
+
+Short description
+-----------------
+
+This is a simple programm for adding ledger formated transactions to a ledger journal.
