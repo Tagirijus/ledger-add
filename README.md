@@ -7,7 +7,7 @@ Short description
 This is a simple programm for adding ledger formated transactions to a ledger journal. Advantages are *default values* and *presets* for fast entry of transactions.
 
 
-#Configration
+#Configuration
 The programm can start with a *parameter* or with a new environment variable LEDGER_FILE_PATH set. The *parameter* should be an existing file, to which the transactions will be appended. The environment variable should be the path to such a file. The file has this format: ledger_*[actual_year]*.journal
 
 The ledger-add programm tries to load this file with an auto generated name. This means: you set up *ledger_2015.journal* manually for the year 2015. If you start the programm between 01.01.2015 - 31.12.2015, the programm will automatically load the file *$LEDGER_FILE_PATH/ledger_2015.journal*.
@@ -20,7 +20,7 @@ Starting the programm on 25th october 2015 with LEDGER_FILE_PATH set to '/home/u
 
 	Date [2015/10/25]:
 
-Now you either enter the date you want the transaction to have (maybe the 15th october) ...
+Now you either enter the date you want the transaction to have (maybe the 15th october 2015) ...
 
 	Date [2015/10/25]: 2015/10/15
 
