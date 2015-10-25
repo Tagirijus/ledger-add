@@ -71,8 +71,6 @@ The next field can be blank. This way ledger will calculate the balance automati
 Since we do not want to add another account yet (we were just shopping at 'Markt' for example), we just press enter:
 
 	- - - - -
-
-
 	2015/10/25 Einkaufen
 	 Konto  € 10.00
 	 Markt
@@ -104,8 +102,6 @@ Voila! A new preset was generated. Let's press enter again so we can see the sav
 	Account 3:
 
 	- - - - -
-
-
 	2015/10/25 Einkaufen
 	 Konto  € 10.00
 	 Markt

@@ -276,7 +276,7 @@ class ledgerer_class(object):
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
-		print self.final_str
+		print self.final_str[4:]
 		print '- - - - -'
 		print
 
