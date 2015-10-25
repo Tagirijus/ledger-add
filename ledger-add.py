@@ -146,7 +146,16 @@ class ledgerer_class(object):
 				user = self.today
 				input_correct = validate_date(user)
 			else:
-				input_correct = validate_date(user)
+				# check if it a day difference or a valid date
+				try:
+					# it is a day difference
+					difference = int(user)
+					new_date = datetime.datetime.now() + datetime.timedelta(days=difference)
+					user = new_date.strftime('%Y/%m/%d')
+					input_correct = validate_date(user)
+				except Exception, e:
+					# it's a valid date ... or not
+					input_correct = validate_date(user)
 			# or tell the user that it is wrong ... or end the programm if it's a '.'
 			if not input_correct:
 				end(user)
@@ -276,7 +285,7 @@ class ledgerer_class(object):
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
-		print self.final_str[4:]
+		print self.final_str[2:]
 		print '- - - - -'
 		print
 

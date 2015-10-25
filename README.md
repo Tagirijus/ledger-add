@@ -25,7 +25,6 @@ Now you either enter the date you want the transaction to have (maybe the 15th o
 	Date [2015/10/25]: 2015/10/15
 
 ... or you enter the difference of days from *today* (maybe yesterday) ...
-[THIS FEATURE IS NOT IMPLEMENTED YET!]
 
 	Date [2015/10/25]: -1
 
@@ -114,5 +113,9 @@ Voila! A new preset was generated. Let's press enter again so we can see the sav
 	Date [2015/10/25]:
 	Presets: market
 	Name or preset ('p ...') [Einkaufen]:
+
+If you want to chose the preset now, you can enter 'p market':
+
+	Name or preset ('p ...') [Einkaufen]: p market
 
 You can exit the programm by entering '.' in nearly any input.
