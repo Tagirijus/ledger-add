@@ -82,6 +82,9 @@ class ledgerer_class(object):
 				self.preset_content.append(x.rstrip().split('´'))
 			preset_file.close()
 		else:
+			preset_file = open(path_to_project + '/ledger-add.presets', 'w')
+			preset_file.write('')
+			preset_file.close()
 			self.preset_content = []
 
 		# check if its preset chosing
