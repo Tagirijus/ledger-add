@@ -114,3 +114,5 @@ Voila! A new preset was generated. Let's press enter again so we can see the sav
 	Date [2015/10/25]:
 	Presets: market
 	Name or preset ('p ...') [Einkaufen]:
+
+You can exit the programm by entering '.' in nearly any input.
