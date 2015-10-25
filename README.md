@@ -72,6 +72,7 @@ Since we do not want to add another account yet (we were just shopping at 'Markt
 
 	- - - - -
 
+
 	2015/10/25 Einkaufen
 	 Konto  € 10.00
 	 Markt
