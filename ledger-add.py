@@ -167,12 +167,16 @@ class ledgerer_class(object):
 	def name(self):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
 		preset = self.preset('list')
-		user = raw_input('Name or preset (\'p ...\') [' + default_transaction_name + ']: ')
+		print 'p ... = chose preset. d ... = delete preset.'
+		user = raw_input('Name or preset [' + default_transaction_name + ']: ')
 		# check for preset command
 		if len(user) > 2:
 			if user[0:2] == 'p ':
 				# input correct?
 				preset = self.preset(user)
+			elif user[0:2] == 'd ':
+				# delete a preset
+				self.save_preset(delete=user[2:])
 		if not user:
 			user = default_transaction_name
 		end(user)
@@ -300,14 +304,18 @@ class ledgerer_class(object):
 			self.append_file()
 
 
-	def save_preset(self):
-		# get the preset name
-		user = raw_input('Preset name [preset]: ')
-		if not user:
-			new_preset_name = 'preset'
+	def save_preset(self, delete=''):
+		if not delete:
+			# get the preset name
+			user = raw_input('Preset name [preset]: ')
+			if not user:
+				new_preset_name = 'preset'
+			else:
+				new_preset_name = user
+			end(user)
 		else:
-			new_preset_name = user
-		end(user)
+			# get the preset name to delete
+			new_preset_name = delete
 
 		# get the lines of the file
 		self.preset('')
@@ -319,7 +327,7 @@ class ledgerer_class(object):
 				which = y
 
 		# override existing preset or cancel
-		if not which < 0:
+		if not which < 0 and not delete:
 			cancel = raw_input('Override existing preset [no]? ')
 			if not cancel:
 				print 'Canceling ...'
@@ -334,7 +342,22 @@ class ledgerer_class(object):
 				self.preset_file_raw[which] += '´' + self.str_accounts[x]
 				self.preset_file_raw[which] += '´' + self.str_accounts_amount[x]
 
-		else:
+		elif delete and which > -1:
+			# delete the preset
+			cancel = raw_input('Really delete the preset [no]? ')
+			if not cancel:
+				print 'Canceling ...'
+				self.date()
+
+			# no cancelling, delete the preset
+			self.preset_file_raw.pop(which)
+
+		elif delete and which < 0:
+			# delete preset not found
+			print 'Preset not found.'
+			self.date()
+
+		elif not delete:
 			# generate new data for new preset
 			tmp = new_preset_name
 			tmp += '´' + self.str_name

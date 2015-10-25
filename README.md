@@ -114,7 +114,7 @@ Voila! A new preset was generated. Let's press enter again so we can see the sav
 	Presets: market
 	Name or preset ('p ...') [Einkaufen]:
 
-If you want to chose the preset now, you can enter 'p market':
+If you want to chose the preset now, you can enter 'p market' (or delete it with 'd market'):
 
 	Name or preset ('p ...') [Einkaufen]: p market
 
