@@ -190,9 +190,14 @@ class ledgerer_class(object):
 
 
 	def transaction_comment(self):
-		# gets the comment for the transaction. again: no big checks are needed, string only
+		# gets the comment for the transaction. again: no big checkings are needed, string only
 		user = raw_input('Transaction comment: ')
 		end(user)
+		if user:
+			user2 = raw_input('Transaction comment 2: ')
+			end(user)
+			if user2:
+				user += '\n ; ' + user2
 		self.str_transaction_comment = user
 		self.commodity()
 
