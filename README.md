@@ -1,6 +1,12 @@
 Ledger command line accounting - transaction adder in python
 ============================================================
 
+Note
+----
+
+Use this program with care. I am no professional developer and I might coded something that will destroy your ledger journal without intention. Always keep backups of your files!
+
+
 Short description
 -----------------
 

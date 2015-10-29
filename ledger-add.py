@@ -9,13 +9,35 @@ import os, sys, datetime
 
 
 
+# configurarion
+
+# !!! ATTENTION !!!
+#
+# The following option 'sort_ledger_file' will not only append new data to your file,
+# but also rewrite the file with sorted entries. It is only useful, if you like to add
+# older entries afterwards, while keeping the corrrect order of the entries in the
+# journal-file. If there are bugs in the code, this function could totally destroy your
+# original ledger-journal file. Chose 'False', if you like to be more save.
+# Otherwise chose 'True' and feel free to trust my non-professional development skills. (-;
+#
+# !!! ATTENTION !!!
+
+sort_ledger_file = True
 
 # some default values
 
 default_transaction_name = 'Einkaufen'
-default_account_one_name = 'Konto'
+default_account_one_name = 'konto'
 default_commodity = '€'
 
+
+#
+#
+###
+###
+#################################################
+#################################################
+#################################################
 
 
 # get the actual path to the python script - for relative loading of the metronome sounds
@@ -37,10 +59,16 @@ else:
 	# using the argument as the file
 	ledger_file = arguments[1]
 
-# check if it's a real file
-if not os.path.isfile(ledger_file):
-	print 'Given \'ledger file\' is not a file.'
-	exit()
+# check if it exists and if it's a real file
+if os.path.exists(ledger_file):
+	if not os.path.isfile(ledger_file):
+		print 'Given \'ledger file\' is not a file.'
+		exit()
+# create new file otherwise
+else:
+	f = open(ledger_file, 'w')
+	f.write('')
+	f.close()
 
 # everything is fine, go on!
 print 'Using', ledger_file, 'for computing.'
@@ -55,10 +83,14 @@ def end(s):
 		print
 		exit()
 
+def get_date(inp):
+	# string into date
+	return datetime.datetime.strptime(inp, '%Y/%m/%d')
+
 def validate_date(d):
 	# simple check, if the string d is a valid date format
 	try:
-		datetime.datetime.strptime(d, '%Y/%m/%d')
+		get_date(d)
 		return True
 	except ValueError:
 		return False
@@ -282,7 +314,7 @@ class ledgerer_class(object):
 
 		# combine the variables to a single string
 		# first the date and name of the transaction
-		self.final_str = '\n\n' + self.str_date + ' ' + self.str_name + '\n'
+		self.final_str = self.str_date + ' ' + self.str_name + '\n'
 		# add the comment, but only if there is a comment set
 		if not self.str_transaction_comment == '':
 			self.final_str += ' ; ' + self.str_transaction_comment + '\n'
@@ -294,7 +326,7 @@ class ledgerer_class(object):
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
-		print self.final_str[2:]
+		print self.final_str
 		print '- - - - -'
 		print
 
@@ -389,12 +421,98 @@ class ledgerer_class(object):
 
 
 	def append_file(self):
-		print 'Appending ...'
+		print 'Adding entry ...'
 
-		# simple append to the given file and start from beginning
-		with open(ledger_file, 'a') as my_file:
-			my_file.write(self.final_str)
-			my_file.close()
+		# getting the original data
+		f = open(ledger_file, 'r')
+		original_raw = f.read()
+		original = original_raw.splitlines()
+		f.close()
+
+
+		# first check, if the file is empty: then just append / write new
+		if len(original) < 1:
+			f = open(ledger_file, 'w')
+			f.write(self.final_str)
+			f.close()
+
+		# add new entry on correct position, if configuration for this feature is enabled
+		elif len(original) > 1 and sort_ledger_file:
+
+			# some markers to find the index for the date before new entrys date and the one after it
+			before_new 		= -1
+			before_new_end 	= -1
+			after_new 		= -1
+			# and get the date as da dateimte object from the entry
+			new_entry_date = get_date( self.str_date )
+
+			# check if there is a date after the new entrys date and get its position
+			for x in xrange(0, len(original)):
+				# check if the actual line contains a date (the first 10 characters)
+				if validate_date( original[x][0:10] ):
+					# check if the found lines date is above new entrys date
+					if new_entry_date < get_date( original[x][0:10] ):
+						after_new = x
+						break
+
+			# there is a date after, search for date before new entrys date
+			if after_new > -1:
+				for x in xrange(after_new, -1, -1):
+					# check if the actual line contains a date (the first 10 characters)
+					if validate_date( original[x][0:10] ):
+						# check if the found lines date is under new entrys date
+						if new_entry_date > get_date( original[x][0:10] ):
+							before_new = x
+							# search end of before-entry
+							for y in xrange(x, after_new):
+								if original[y] == '':
+									before_new_end = y
+									break
+							break
+
+				# prepare output string
+				output_content = ''
+
+				# there is a date before, add antry in between
+				added = False
+				if before_new > -1:
+					for x in xrange(0, len(original)):
+						# just add a line into the ouput string
+						if x < before_new_end or added:
+							output_content += original[x]
+						# or add the new entry
+						else:
+							output_content += '\n' + self.final_str + '\n'
+							added = True
+
+						# add line break if it is not the last line
+						if x < len(original)-1:
+							output_content += '\n'
+
+				# there is no date before, add it as first entry
+				else:
+					output_content += self.final_str + '\n\n' + original_raw
+
+
+				# write ouput string
+				f = open(ledger_file, 'w')
+				f.write(output_content)
+				f.close()
+
+			# there is no date after new entrys date - it has to be the newest - so just append
+			else:
+				f = open(ledger_file, 'a')
+				f.write('\n\n' + self.final_str)
+				f.close()
+
+		# simple append to the given file
+		elif len(original) > 1 and not sort_ledger_file:
+
+			f = open(ledger_file, 'a')
+			f.write('\n\n' + self.final_str)
+			f.close()
+
+		# start from the beginning
 		print
 		self.date()
 
