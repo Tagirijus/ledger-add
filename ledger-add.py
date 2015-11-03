@@ -254,13 +254,15 @@ class ledgerer_class(object):
 
 		# generate correct default account name
 		if '{name}' in default_account_one_name:
-			default_account_one_name = default_account_one_name.replace('{name}', self.str_name)
+			default_account_one_name_str = default_account_one_name.replace('{name}', self.str_name)
+		else:
+			default_account_one_name_str = default_account_one_name
 
 		# get the first transaction post
-		user = raw_input('Account 1 name [' + default_account_one_name + ']: ')
+		user = raw_input('Account 1 name [' + default_account_one_name_str + ']: ')
 		# no input? use default!
 		if not user:
-			user = default_account_one_name
+			user = default_account_one_name_str
 		end(user)
 		self.str_accounts.append(user)
 
