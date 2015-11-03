@@ -201,6 +201,9 @@ class ledgerer_class(object):
 		preset = self.preset('list')
 		print 'p ... = chose preset. d ... = delete preset.'
 		user = raw_input('Name or preset [' + default_transaction_name + ']: ')
+		# go back
+		if user == '<':
+			self.date()
 		# check for preset command
 		if len(user) > 2:
 			if user[0:2] == 'p ':
@@ -224,6 +227,9 @@ class ledgerer_class(object):
 	def transaction_comment(self):
 		# gets the comment for the transaction. again: no big checkings are needed, string only
 		user = raw_input('Transaction comment: ')
+		# go back
+		if user == '<':
+			self.name()
 		end(user)
 		if user:
 			user2 = raw_input('Transaction comment 2: ')
@@ -237,6 +243,9 @@ class ledgerer_class(object):
 	def commodity(self):
 		# change the commodity
 		user = raw_input('Commodity [' + default_commodity + ']: ')
+		# go back
+		if user == '<':
+			self.transaction_comment()
 		# no input? use default!
 		if not user:
 			user = default_commodity
@@ -260,6 +269,9 @@ class ledgerer_class(object):
 
 		# get the first transaction post
 		user = raw_input('Account 1 name [' + default_account_one_name_str + ']: ')
+		# go back
+		if user == '<':
+			self.commodity()
 		# no input? use default!
 		if not user:
 			user = default_account_one_name_str
@@ -270,6 +282,9 @@ class ledgerer_class(object):
 		account_one_amount = False
 		while not account_one_amount:
 			user = raw_input('Account 1 amount: ')
+			# go back
+			if user == '<':
+				self.commodity()
 			if not user:
 				print 'First account needs an amount.'
 			else:
@@ -284,6 +299,9 @@ class ledgerer_class(object):
 		while account_next:
 			# since it can be more than 2 posts, repeat until the account / post name is blank ...
 			user = raw_input('Account ' + str(account_next_number) + ': ' )
+			# go back
+			if user == '<':
+				self.commodity()
 			if not user:
 				# ... but repeat if there are not at least 2 posts at all
 				if len(self.str_accounts) < 2:
@@ -298,6 +316,9 @@ class ledgerer_class(object):
 				account_next_amount = True
 				while account_next_amount:
 					user = raw_input('Account ' + str(account_next_number) + ' amount: ')
+					# go back
+					if user == '<':
+						self.commodity()
 					# one post may have a blank amount (ledger auto calculate) the others must have an amount
 					if not user and account_next_atleast_one_amount:
 						print 'Only one account may not have an amount.'
@@ -340,6 +361,9 @@ class ledgerer_class(object):
 
 		# ask if output should be appended
 		user = raw_input('Add this entry? (yes=appends to file, p=saves as a preset) [yes]: ')
+		# go back
+		if user == '<':
+			self.accounts()
 		if user == 'n' or user == 'no':
 			self.date()
 		elif user == 'p' or user == 'preset':
