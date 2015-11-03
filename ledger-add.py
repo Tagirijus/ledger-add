@@ -27,7 +27,7 @@ sort_ledger_file = True
 # some default values
 
 default_transaction_name = 'Einkaufen'
-default_account_one_name = 'konto'
+default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
 default_commodity = '€'
 
 
@@ -246,9 +246,15 @@ class ledgerer_class(object):
 
 
 	def accounts(self):
+		global default_account_one_name
+
 		# set up an array for the transaction posts
 		self.str_accounts = []
 		self.str_accounts_amount = []
+
+		# generate correct default account name
+		if '{name}' in default_account_one_name:
+			default_account_one_name = default_account_one_name.replace('{name}', self.str_name)
 
 		# get the first transaction post
 		user = raw_input('Account 1 name [' + default_account_one_name + ']: ')
