@@ -192,7 +192,7 @@ class ledgerer_class(object):
 			if not input_correct:
 				end(user)
 				print 'Wrong input.'
-		self.str_date = user
+		self.str_date = get_date(user).strftime('%Y/%m/%d')
 		self.name()
 
 
