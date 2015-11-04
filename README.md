@@ -12,14 +12,14 @@ This is a simple program for adding ledger formatted transactions to a ledger jo
 
 ## Configuration
 
-The program can start with a *parameter* or with a new environment variable `LEDGER_FILE_PATH` set. The *parameter* should be an existing file, to which the transactions will be appended. The environment variable should be the path to such a file. The file has this format: `ledger_*[current_year]*.journal`
+The program can start with a *parameter* or with a new environment variable `LEDGER_FILE_PATH` set. The *parameter* should be an existing file, to which the transactions will be appended. The environment variable should be the path to such a file. The file has this format: `ledger_[current_year].journal`
 
 The ledger-add program tries to load this file with an auto generated name. This means: you set up `ledger_2015.journal` manually for the year 2015. If you start the program between 2015-01-01 and 2015-12-31, the program will automatically load the file `$LEDGER_FILE_PATH/ledger_2015.journal`.
 
 
 ## Usage
 
-Starting the program on 25th October 2015 with `LEDGER_FILE_PATH` set to /home/user/ledger_files` and a file already created like `/home/user/ledger_files/ledger_2015.journal` will bring you to this screen:
+Starting the program on 25th October 2015 with `LEDGER_FILE_PATH` set to `/home/user/ledger_files` and a file already created like `/home/user/ledger_files/ledger_2015.journal` will bring you to this screen:
 
 	Using /home/user/ledger_files/ledger_2015.journal for computing.
 
@@ -123,4 +123,5 @@ If you want to choose the preset now, you can enter `p market` (or delete it wit
 
 	Name or preset ('p ...') [Einkaufen]: p market
 
+You can enter `<` to go back to the last input.
 You can exit the program by entering `.` in nearly any input.
