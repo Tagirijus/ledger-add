@@ -40,7 +40,7 @@ default_commodity = '€'
 #################################################
 
 
-# get the actual path to the python script - for relative loading of the metronome sounds
+# get the actual path to the python script
 path_to_project = os.path.dirname(os.path.realpath(__file__))
 
 

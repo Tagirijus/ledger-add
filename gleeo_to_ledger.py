@@ -17,7 +17,7 @@ row_project_xtra2	= 10
 row_task_xtra1   	= 11
 row_task_xtra2   	= 12
 seperator 			= ','
-first_line 			= False   #means that the first line is the head only, not important for content
+first_line 			= False   # False means that the first line is the head only, not important for content
 
 
 
@@ -74,8 +74,8 @@ for single_file in csv_files:
 	for y, x in enumerate(origin):
 		tmp_start =	datetime.datetime.strptime( x[row_start_date] + ' ' + x[row_start_time], '%Y-%m-%d %H:%M' ).strftime('%Y/%m/%d %H:%M:00')
 		tmp_ende  =	datetime.datetime.strptime( x[row_end_date] + ' ' + x[row_end_time], '%Y-%m-%d %H:%M' ).strftime('%Y/%m/%d %H:%M:00')
-		tmp_a = x[led_a] if x[led_a] else 'Account'
-		tmp_b = ':' + x[led_b] if x[led_b] else ''
+		tmp_a = x[led_a] if x[led_a] else x[led_b] if x[led_b] else 'Account'
+		tmp_b = ':' + x[led_b] if (x[led_b] and x[led_a]) else ''
 		tmp_c = ':' + x[led_c] if x[led_c] else ''
 		tmp_d = ':' + x[led_d] if x[led_d] else ''
 		final_output += 'i ' + tmp_start + ' ' + tmp_a + tmp_b + tmp_c + tmp_d + '\n'
