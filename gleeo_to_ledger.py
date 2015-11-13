@@ -1,31 +1,4 @@
-import os, datetime
-
-
-
-# format of the Gleeo Time Tracker CSV
-row_project      	= 0
-row_task         	= 1
-row_details      	= 2
-row_start_date   	= 3
-row_start_time   	= 4
-row_end_date     	= 5
-row_end_time     	= 6
-row_duration     	= 7
-row_duration_dec 	= 8
-row_project_xtra1	= 9
-row_project_xtra2	= 10
-row_task_xtra1   	= 11
-row_task_xtra2   	= 12
-seperator 			= ','
-first_line 			= False   # False means that the first line is the head only, not important for content
-
-
-
-# format of the ledger output
-led_a = row_project_xtra1
-led_b = row_project
-led_c = row_task
-led_d = row_details
+import os, datetime, sys
 
 
 
@@ -36,19 +9,85 @@ except Exception:
 	# nothing set, quit programm
 	print 'Environment variable LEDGER_FILE_PATH is not set.'
 	exit()
-print 'Working directory: ' + ledger_path
-print
 
 
-# get list of all CSV files in this directory
+
+
+
+
+#######
+######## configuration ### ##### #####
+#######
+
+# paths to files
+archive_file	= ledger_path + '/time_archive.journal'
+default_csv		= ledger_path + '/export_all.csv'
+convert_all_csv	= False
+
+
+# format of the Gleeo Time Tracker CSV
+row_domain			= 0
+row_project      	= 1
+row_task         	= 2
+row_details      	= 3
+row_start_date   	= 4
+row_start_time   	= 5
+row_end_date     	= 6
+row_end_time     	= 7
+row_duration     	= 8
+row_duration_dec 	= 9
+row_project_xtra1	= 10
+row_project_xtra2	= 11
+row_task_xtra1   	= 12
+row_task_xtra2   	= 13
+seperator 			= ','
+first_line 			= False   # False means that the first line is the head only, not important for content
+
+
+# format of the ledger output
+led_a = row_domain
+led_b = row_project
+led_c = row_task
+led_d = row_details
+
+
+#######
+######## ##### ##### ##### ##### #####
+#######
+
+
+
+
+
+
+# check arguments, 'append' or 'a' will convert default_csv to a ledger journal and append it to archive_file
+append_it = False
+if len(sys.argv) > 1:
+	if sys.argv[1] == 'append' or sys.argv[1] == 'a':
+		append_it = True
+	else:
+		print 'Please use \'append\' or \'a\' for append-mode.'
+		print
+		exit()
+
+
+
+# get list of all CSV files in this directory, if configuration for this is true
 csv_files = []
-for file in os.listdir(ledger_path):
-	if file.endswith('.csv'):
-		csv_files.append(ledger_path + '/' + file)
-print 'Input file(s):'
-for x in csv_files:
-	print '   ' + x[x.rfind('/')+1:]
-print
+if convert_all_csv:
+	for file in os.listdir(ledger_path):
+		if file.endswith('.csv'):
+			csv_files.append(ledger_path + '/' + file)
+	print 'Input file(s):'
+	for x in csv_files:
+		print '   ' + x[x.rfind('/')+1:]
+	print
+else:
+	if os.path.isfile( default_csv ):
+		csv_files.append( default_csv )
+		print 'Input file: ' + default_csv
+	else:
+		print default_csv + ' is no file.'
 
 
 
@@ -81,13 +120,25 @@ for single_file in csv_files:
 		final_output += 'i ' + tmp_start + ' ' + tmp_a + tmp_b + tmp_c + tmp_d + '\n'
 		final_output += 'o ' + tmp_ende
 		if not y == len(origin) - 1:
-			final_output += '\n' + '\n'
+			final_output += '\n\n'
 
-	# saving output to file
-	print 'Saving ...'
-	output_file = single_file[0:single_file.rfind('.')] + '.journal'
-	output_file_name = output_file[output_file.rfind('/')+1:]
-	f = open(output_file,'w')
-	f.write(final_output)
-	f.close()
-	print 'Saved to \'' + output_file_name + '\''
+	if append_it:
+		# appending output to archive_file
+		print 'Appending ...'
+		f = open(archive_file, 'a')
+		f.write('\n\n' + final_output)
+		f.close()
+		print 'Appended to \'' + archive_file + '\''
+		print 'Deleting appended original data ...'
+		f = open( single_file[0:single_file.rfind('.')] + '.journal', 'w')
+		f.write('')
+		f.close()
+	else:
+		# saving output to file
+		print 'Saving ...'
+		output_file = single_file[0:single_file.rfind('.')] + '.journal'
+		output_file_name = output_file[output_file.rfind('/')+1:]
+		f = open(output_file,'w')
+		f.write(final_output)
+		f.close()
+		print 'Saved to \'' + output_file_name + '\''
