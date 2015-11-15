@@ -24,12 +24,34 @@ import os, sys, datetime
 
 sort_ledger_file = True
 
+# colorized output? if enabled, the program will output everything colorized (customizable below)
+
+colorize = True
+
 # some default values
 
 default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
 default_commodity = '€'
+info_text	 = 'Ein / Aus Job: + RECHNUNGSNUMMER !'
 
+# color variables
+
+CL_PURPLE = '\033[95m'
+CL_BLUE = '\033[94m'
+CL_GREEN = '\033[92m'
+CL_YELLOW = '\033[93m'
+CL_RED = '\033[91m'
+CL_BOLD = '\033[1m'
+CL_UNDERLINE = '\033[4m'
+
+# customize the colors here !!!
+
+CL_TXT = CL_PURPLE if colorize else ''
+CL_INF = CL_BOLD + CL_RED if colorize else ''
+CL_DEF = CL_YELLOW if colorize else ''
+CL_OUT = (CL_BOLD + CL_YELLOW) if colorize else ''
+CL_E = '\033[0m' if colorize else ''
 
 #
 #
@@ -39,6 +61,9 @@ default_commodity = '€'
 #################################################
 #################################################
 
+
+# color info_text
+info_text = CL_INF + info_text + CL_E + '\n'
 
 # get the actual path to the python script
 path_to_project = os.path.dirname(os.path.realpath(__file__))
@@ -53,7 +78,7 @@ if len(arguments) < 2:
 		ledger_file = os.environ['LEDGER_FILE_PATH'] + '/ledger_' + datetime.datetime.now().strftime('%Y') + '.journal'
 	except Exception:
 		# nothing set, quit programm
-		print 'No arguments given and environment variable LEDGER_FILE_PATH is not set.'
+		print CL_INF + 'No arguments given and environment variable LEDGER_FILE_PATH is not set.' + CL_E
 		exit()
 else:
 	# using the argument as the file
@@ -62,7 +87,7 @@ else:
 # check if it exists and if it's a real file
 if os.path.exists(ledger_file):
 	if not os.path.isfile(ledger_file):
-		print 'Given \'ledger file\' is not a file.'
+		print CL_INF + 'Given \'ledger file\' is not a file.' + CL_E
 		exit()
 # create new file otherwise
 else:
@@ -71,7 +96,7 @@ else:
 	f.close()
 
 # everything is fine, go on!
-print 'Using', ledger_file, 'for computing.'
+print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 
 
@@ -99,7 +124,7 @@ class ledgerer_class(object):
 	def __init__(self, the_file):
 		if not os.path.isfile(the_file):
 			# exits the programm, if the given environment variable or argument is not a file
-			print 'Given argument is not a file.'
+			print CL_INF + 'Given argument is not a file.' + CL_E
 			exit()
 
 
@@ -131,7 +156,7 @@ class ledgerer_class(object):
 				if x[0] == preset_name:
 					which = y
 			if which < 0:
-				print 'Preset not found.'
+				print CL_INF + 'Preset not found.' + CL_E
 				return False
 
 			# get its values from found preset
@@ -155,7 +180,7 @@ class ledgerer_class(object):
 
 		# or list / print out the presets
 		elif what == 'list':
-			print 'Presets: ' + ', '.join(str(x[0]) for x in self.preset_content)
+			print CL_TXT + 'Presets: ' + CL_DEF + ', '.join(str(x[0]) for x in self.preset_content) + CL_E + CL_E
 			return False
 
 		# otherwise return False
@@ -165,6 +190,9 @@ class ledgerer_class(object):
 	def date(self):
 		print
 
+		# print info_text
+		print info_text
+
 		# the actual date, used as a default template
 		self.today = datetime.datetime.now().strftime('%Y/%m/%d')
 
@@ -172,7 +200,7 @@ class ledgerer_class(object):
 		# repeat while the input is not a valid date (so it goes on, if the user inputs a correct date)
 		input_correct = False
 		while not input_correct:
-			user = raw_input('Date [' + self.today + ']: ')
+			user = raw_input(CL_TXT + 'Date [' + CL_E + CL_DEF + self.today + CL_E + CL_TXT + ']: ' + CL_E)
 			# if user inputs nothing, use the default (today)
 			if not user:
 				user = self.today
@@ -191,7 +219,7 @@ class ledgerer_class(object):
 			# or tell the user that it is wrong ... or end the programm if it's a '.'
 			if not input_correct:
 				end(user)
-				print 'Wrong input.'
+				print CL_INF + 'Wrong input.' + CL_E
 		self.str_date = get_date(user).strftime('%Y/%m/%d')
 		self.name()
 
@@ -199,8 +227,8 @@ class ledgerer_class(object):
 	def name(self):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
 		preset = self.preset('list')
-		print 'p ... = chose preset. d ... = delete preset.'
-		user = raw_input('Name or preset [' + default_transaction_name + ']: ')
+		print CL_TXT + 'p ... = chose preset. d ... = delete preset.' + CL_E
+		user = raw_input(CL_TXT + 'Name or preset [' + CL_E + CL_DEF + default_transaction_name + CL_E + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.date()
@@ -226,13 +254,13 @@ class ledgerer_class(object):
 
 	def transaction_comment(self):
 		# gets the comment for the transaction. again: no big checkings are needed, string only
-		user = raw_input('Transaction comment: ')
+		user = raw_input(CL_TXT + 'Transaction comment: ' + CL_E)
 		# go back
 		if user == '<':
 			self.name()
 		end(user)
 		if user:
-			user2 = raw_input('Transaction comment 2: ')
+			user2 = raw_input(CL_TXT + 'Transaction comment 2: ' + CL_E)
 			end(user)
 			if user2:
 				user += '\n ; ' + user2
@@ -242,7 +270,7 @@ class ledgerer_class(object):
 
 	def commodity(self):
 		# change the commodity
-		user = raw_input('Commodity [' + default_commodity + ']: ')
+		user = raw_input(CL_TXT + 'Commodity [' + CL_E + CL_DEF + default_commodity + CL_E + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.transaction_comment()
@@ -268,7 +296,7 @@ class ledgerer_class(object):
 			default_account_one_name_str = default_account_one_name
 
 		# get the first transaction post
-		user = raw_input('Account 1 name [' + default_account_one_name_str + ']: ')
+		user = raw_input(CL_TXT + 'Account 1 name [' + CL_E + CL_DEF + default_account_one_name_str + CL_E + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.commodity()
@@ -281,12 +309,12 @@ class ledgerer_class(object):
 		# gets the amount for the transaction. first transaction post needs an amount
 		account_one_amount = False
 		while not account_one_amount:
-			user = raw_input('Account 1 amount: ')
+			user = raw_input(CL_TXT + 'Account 1 amount: ' + CL_E)
 			# go back
 			if user == '<':
 				self.commodity()
 			if not user:
-				print 'First account needs an amount.'
+				print CL_INF + 'First account needs an amount.' + CL_E
 			else:
 				account_one_amount = True
 		end(user)
@@ -298,14 +326,14 @@ class ledgerer_class(object):
 		account_next_number = len(self.str_accounts)+1
 		while account_next:
 			# since it can be more than 2 posts, repeat until the account / post name is blank ...
-			user = raw_input('Account ' + str(account_next_number) + ': ' )
+			user = raw_input(CL_TXT + 'Account ' + str(account_next_number) + ': ' + CL_E)
 			# go back
 			if user == '<':
 				self.commodity()
 			if not user:
 				# ... but repeat if there are not at least 2 posts at all
 				if len(self.str_accounts) < 2:
-					print 'Need at least 2 accounts.'
+					print CL_INF + 'Need at least 2 accounts.' + CL_E
 				else:
 					account_next = False
 			else:
@@ -315,13 +343,13 @@ class ledgerer_class(object):
 				# also check for the specific amount
 				account_next_amount = True
 				while account_next_amount:
-					user = raw_input('Account ' + str(account_next_number) + ' amount: ')
+					user = raw_input(CL_TXT + 'Account ' + str(account_next_number) + ' amount: ' + CL_E)
 					# go back
 					if user == '<':
 						self.commodity()
 					# one post may have a blank amount (ledger auto calculate) the others must have an amount
 					if not user and account_next_atleast_one_amount:
-						print 'Only one account may not have an amount.'
+						print CL_INF + 'Only one account may not have an amount.' + CL_E
 					elif not user and not account_next_atleast_one_amount:
 						account_next_atleast_one_amount = True
 						account_next_amount = False
@@ -339,7 +367,7 @@ class ledgerer_class(object):
 
 	def final_add(self):
 		print
-		print '- - - - -'
+		print CL_TXT + '- - - - -' + CL_E
 
 		# combine the variables to a single string
 		# first the date and name of the transaction
@@ -355,12 +383,12 @@ class ledgerer_class(object):
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
-		print self.final_str
-		print '- - - - -'
+		print CL_OUT + self.final_str + CL_E
+		print CL_TXT + '- - - - -' + CL_E
 		print
 
 		# ask if output should be appended
-		user = raw_input('Add this entry? (yes=appends to file, p=saves as a preset) [yes]: ')
+		user = raw_input(CL_TXT + 'Add this entry? (yes=appends to file, p=saves as a preset) [' + CL_E + CL_DEF + 'yes' + CL_E + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.accounts()
@@ -376,7 +404,7 @@ class ledgerer_class(object):
 	def save_preset(self, delete=''):
 		if not delete:
 			# get the preset name
-			user = raw_input('Preset name [preset]: ')
+			user = raw_input(CL_TXT + 'Preset name [' + CL_E + CL_DEF + 'preset' + CL_E + CL_TXT + ']: ' + CL_E)
 			if not user:
 				new_preset_name = 'preset'
 			else:
@@ -397,9 +425,9 @@ class ledgerer_class(object):
 
 		# override existing preset or cancel
 		if not which < 0 and not delete:
-			cancel = raw_input('Override existing preset [no]? ')
+			cancel = raw_input(CL_TXT + 'Override existing preset [' + CL_E + CL_DEF + 'no' + CL_E + CL_TXT + ']? ' + CL_E)
 			if not cancel:
-				print 'Canceling ...'
+				print CL_TXT + 'Canceling ...' + CL_E
 				self.date()
 
 			# no cancelling, override data for chosen preset
@@ -413,17 +441,17 @@ class ledgerer_class(object):
 
 		elif delete and which > -1:
 			# delete the preset
-			cancel = raw_input('Really delete the preset [no]? ')
+			cancel = raw_input(CL_TXT + 'Really delete the preset [' + CL_E + CL_DEF + 'no' + CL_E + CL_TXT + ']? ' + CL_E)
 			if not cancel:
-				print 'Canceling ...'
+				print CL_TXT + 'Canceling ...' + CL_E
 				self.date()
 
 			# no cancelling, delete the preset
 			self.preset_file_raw.pop(which)
 
 		elif delete and which < 0:
-			# delete preset not found
-			print 'Preset not found.'
+			# delete preset not founCL_TXT + d + CL_E
+			print CL_INF + 'Preset not found.' + CL_E
 			self.date()
 
 		elif not delete:
@@ -446,14 +474,14 @@ class ledgerer_class(object):
 		preset_file = open(path_to_project + '/ledger-add.presets', 'w')
 		preset_file.write(final_output)
 		preset_file.close()
-		print 'Saved to preset file.'
+		print CL_TXT + 'Saved to preset file.' + CL_E
 
 		# start from beginning
 		self.date()
 
 
 	def append_file(self):
-		print 'Adding entry ...'
+		print CL_TXT + 'Adding entry ...' + CL_E
 
 		# getting the original data
 		f = open(ledger_file, 'r')
