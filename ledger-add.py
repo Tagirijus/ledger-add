@@ -33,7 +33,8 @@ colorize = True
 default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
 default_commodity = '€'
-info_text	 = 'Ein / Aus Job: + RECHNUNGSNUMMER !'
+info_text	 =  'Ein / Aus Job: + RECHNUNGSNUMMER ! (178, 179, a17, a18, ...)\n'
+info_text	 += 'Soundtaxi: Lizenzgruppe in Comment ! (":l1:", ":l2", ...)'
 
 # color variables
 
