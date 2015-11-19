@@ -51,6 +51,10 @@ led_c = row_task
 led_d = row_details
 
 
+# super account, in this account are all other accounts
+superacc = 'All'
+
+
 #######
 ######## ##### ##### ##### ##### #####
 #######
@@ -117,7 +121,7 @@ for single_file in csv_files:
 		tmp_b = ':' + x[led_b] if (x[led_b] and x[led_a]) else ''
 		tmp_c = ':' + x[led_c] if x[led_c] else ''
 		tmp_d = ':' + x[led_d] if x[led_d] else ''
-		final_output += 'i ' + tmp_start + ' ' + tmp_a + tmp_b + tmp_c + tmp_d + '\n'
+		final_output += 'i ' + tmp_start + ' ' + superacc + ':' + tmp_a + tmp_b + tmp_c + tmp_d + '\n'
 		final_output += 'o ' + tmp_ende
 		if not y == len(origin) - 1:
 			final_output += '\n\n'
