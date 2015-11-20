@@ -231,7 +231,7 @@ class ledgerer_class(object):
 	def name(self):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
 		preset = self.preset('list')
-		print CL_TXT + 'p ... = chose preset. d ... = delete preset.' + CL_E
+		print CL_DIM + 'p ... = chose preset. d ... = delete preset.' + CL_E
 		user = raw_input(CL_TXT + 'Name or preset [' + CL_E + CL_DEF + default_transaction_name + CL_E + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
