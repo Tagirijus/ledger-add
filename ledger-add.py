@@ -5,62 +5,62 @@
 # There's a preset system: Press 'p' to chose a preset and save one in the final prompt.
 #
 
-import os, sys, datetime
+import os, sys, datetime, imp
 
 
+### ### ###
+### ### ### load configurarion file for variables
+### ### ###
 
-# configurarion
-
-# !!! ATTENTION !!!
+# !!!!! SET YOU INDIVIDUAL SETTINGS FILE HERE
+# !!!!! IT MUST BE SET UP LIKE THE 'ledger-add-settings-default.py' FILE
+####
+###
 #
-# The following option 'sort_ledger_file' will not only append new data to your file,
-# but also rewrite the file with sorted entries. It is only useful, if you like to add
-# older entries afterwards, while keeping the corrrect order of the entries in the
-# journal-file. If there are bugs in the code, this function could totally destroy your
-# original ledger-journal file. Chose 'False', if you like to be more save.
-# Otherwise chose 'True' and feel free to trust my non-professional development skills. (-;
-#
-# !!! ATTENTION !!!
 
-sort_ledger_file = True
+SETTINGS_FILE = 'ledger-add-settings.py'
 
-# colorized output? if enabled, the program will output everything colorized (customizable below)
-
-colorize = True
-
-# some default values
-
-default_transaction_name = 'Einkaufen'
-default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
-default_commodity = '€'
-info_text	 =  'Ein / Aus Job: + RECHNUNGSNUMMER ! (178, 179, a17, a18, ...)\n'
-info_text	 += 'Soundtaxi: Lizenzgruppe in Comment ! (":l1:", ":l2", ...)'
-
-# color variables
-
-CL_PURPLE = '\033[95m'
-CL_BLUE = '\033[94m'
-CL_GREEN = '\033[92m'
-CL_YELLOW = '\033[93m'
-CL_RED = '\033[91m'
-CL_BOLD = '\033[1m'
-CL_UNDERLINE = '\033[4m'
-
-# customize the colors here !!!
-
-CL_TXT = CL_PURPLE if colorize else ''
-CL_INF = CL_BOLD + CL_RED if colorize else ''
-CL_DEF = CL_YELLOW if colorize else ''
-CL_OUT = (CL_BOLD + CL_YELLOW) if colorize else ''
-CL_E = '\033[0m' if colorize else ''
-
-#
 #
 ###
-###
-#################################################
-#################################################
-#################################################
+####
+# !!!!!
+# !!!!!
+
+# check if user set an individual settings file, or load default otherwise
+
+if os.path.isfile(SETTINGS_FILE):
+	configuration = imp.load_source('ledger-add-settings', SETTINGS_FILE)
+else:
+	if os.path.isfile('ledger-add-settings-default.py'):
+		configuration = imp.load_source('ledger-add-settings', 'ledger-add-settings-default.py')
+	else:
+		print 'No settings file found.'
+		exit()
+
+
+
+# getting the variables from the settings file - don't change the values here!
+
+sort_ledger_file = configuration.sort_ledger_file
+
+default_transaction_name = configuration.default_transaction_name
+default_account_one_name = configuration.default_account_one_name
+default_commodity = configuration.default_commodity
+
+info_text	 =  configuration.info_text
+
+colorize = configuration.colorize
+
+CL_TXT = configuration.CL_TXT
+CL_INF = configuration.CL_INF
+CL_DEF = configuration.CL_DEF
+CL_OUT = configuration.CL_OUT
+CL_E = configuration.CL_E
+
+### ### ###
+### ### ### load configurarion file for variables - END
+### ### ###
+
 
 
 # color info_text
