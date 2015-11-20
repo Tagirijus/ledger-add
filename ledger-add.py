@@ -54,6 +54,7 @@ colorize = configuration.colorize
 CL_TXT = configuration.CL_TXT
 CL_INF = configuration.CL_INF
 CL_DEF = configuration.CL_DEF
+CL_DIM = configuration.CL_DIM
 CL_OUT = configuration.CL_OUT
 CL_E = configuration.CL_E
 

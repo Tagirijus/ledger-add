@@ -49,16 +49,10 @@ CL_TXT = PURPLE if colorize else ''
 CL_INF = BOLD + RED if colorize else ''
 # default values
 CL_DEF = YELLOW if colorize else ''
+# dimmed output
+CL_DIM = DIM if colorize else ''
 # final output
 CL_OUT = BOLD + YELLOW if colorize else ''
 
 # don't change this- it's the ending string for the coloring strings
 CL_E = '\033[0m' if colorize else ''
-
-#
-#
-###
-###
-#################################################
-#################################################
-#################################################
