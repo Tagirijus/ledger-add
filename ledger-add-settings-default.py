@@ -25,7 +25,7 @@ default_commodity = '€'
 # info_text and color variables - and boolean for switching between color modes
 
 info_text	 =  'Infotext line 1\n'
-info_text	 += 'Infotext line 2'
+info_text	 += 'Infotext line 2\n'
 
 colorize = True
 
@@ -39,6 +39,7 @@ MAGENTA = '\033[95m'
 CYAN = '\033[96m'
 BOLD = '\033[1m'
 DIM = '\033[2m'
+GREY = '\033[90m'
 UNDERLINE = '\033[4m'
 
 # customize the colors here !!!
@@ -50,7 +51,7 @@ CL_INF = BOLD + RED if colorize else ''
 # default values
 CL_DEF = YELLOW if colorize else ''
 # dimmed output
-CL_DIM = DIM if colorize else ''
+CL_DIM = GREY if colorize else ''
 # final output
 CL_OUT = BOLD + YELLOW if colorize else ''
 

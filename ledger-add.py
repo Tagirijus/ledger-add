@@ -26,13 +26,17 @@ SETTINGS_FILE = 'ledger-add-settings.py'
 # !!!!!
 # !!!!!
 
+# get the actual path to the python script
+path_to_project = os.path.dirname(os.path.realpath(__file__))
+
+
 # check if user set an individual settings file, or load default otherwise
 
-if os.path.isfile(SETTINGS_FILE):
-	configuration = imp.load_source('ledger-add-settings', SETTINGS_FILE)
+if os.path.isfile(path_to_project + '/' + SETTINGS_FILE):
+	configuration = imp.load_source('ledger-add-settings', path_to_project + '/' + SETTINGS_FILE)
 else:
-	if os.path.isfile('ledger-add-settings-default.py'):
-		configuration = imp.load_source('ledger-add-settings', 'ledger-add-settings-default.py')
+	if os.path.isfile(path_to_project + '/ledger-add-settings-default.py'):
+		configuration = imp.load_source('ledger-add-settings', path_to_project + '/ledger-add-settings-default.py')
 	else:
 		print 'No settings file found.'
 		exit()
@@ -65,10 +69,8 @@ CL_E = configuration.CL_E
 
 
 # color info_text
-info_text = CL_INF + info_text + CL_E + '\n'
+info_text = CL_INF + info_text + CL_E
 
-# get the actual path to the python script
-path_to_project = os.path.dirname(os.path.realpath(__file__))
 
 
 
