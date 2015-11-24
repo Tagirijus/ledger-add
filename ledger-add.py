@@ -184,7 +184,7 @@ class ledgerer_class(object):
 
 		# or list / print out the presets
 		elif what == 'list':
-			print CL_TXT + 'Presets: ' + CL_DEF + ', '.join(str(x[0]) for x in self.preset_content) + CL_E + CL_E
+			print CL_TXT + 'Presets: ' + CL_DEF + ', '.join(str(x[0]) for x in self.preset_content) + CL_E
 			return False
 
 		# otherwise return False
@@ -204,7 +204,7 @@ class ledgerer_class(object):
 		# repeat while the input is not a valid date (so it goes on, if the user inputs a correct date)
 		input_correct = False
 		while not input_correct:
-			user = raw_input(CL_TXT + 'Date [' + CL_E + CL_DEF + self.today + CL_E + CL_TXT + ']: ' + CL_E)
+			user = raw_input(CL_TXT + 'Date [' + CL_DEF + self.today + CL_TXT + ']: ' + CL_E)
 			# if user inputs nothing, use the default (today)
 			if not user:
 				user = self.today
@@ -232,7 +232,7 @@ class ledgerer_class(object):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
 		preset = self.preset('list')
 		print CL_DIM + '"p PRESETNAME" = chose preset. "d PRESETNAME" = delete preset.' + CL_E
-		user = raw_input(CL_TXT + 'Name or preset [' + CL_E + CL_DEF + default_transaction_name + CL_E + CL_TXT + ']: ' + CL_E)
+		user = raw_input(CL_TXT + 'Name or preset [' + CL_DEF + default_transaction_name + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.date()
@@ -274,7 +274,7 @@ class ledgerer_class(object):
 
 	def commodity(self):
 		# change the commodity
-		user = raw_input(CL_TXT + 'Commodity [' + CL_E + CL_DEF + default_commodity + CL_E + CL_TXT + ']: ' + CL_E)
+		user = raw_input(CL_TXT + 'Commodity [' + CL_DEF + default_commodity + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.transaction_comment()
@@ -300,7 +300,7 @@ class ledgerer_class(object):
 			default_account_one_name_str = default_account_one_name
 
 		# get the first transaction post
-		user = raw_input(CL_TXT + 'Account 1 name [' + CL_E + CL_DEF + default_account_one_name_str + CL_E + CL_TXT + ']: ' + CL_E)
+		user = raw_input(CL_TXT + 'Account 1 name [' + CL_DEF + default_account_one_name_str + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.commodity()
@@ -392,7 +392,7 @@ class ledgerer_class(object):
 		print
 
 		# ask if output should be appended
-		user = raw_input(CL_TXT + 'Add this entry? (yes=appends to file, p=saves as a preset) [' + CL_E + CL_DEF + 'yes' + CL_E + CL_TXT + ']: ' + CL_E)
+		user = raw_input(CL_TXT + 'Add this entry? (yes=appends to file, p=saves as a preset) [' + CL_DEF + 'yes' + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
 			self.accounts()
@@ -408,7 +408,7 @@ class ledgerer_class(object):
 	def save_preset(self, delete=''):
 		if not delete:
 			# get the preset name
-			user = raw_input(CL_TXT + 'Preset name [' + CL_E + CL_DEF + 'preset' + CL_E + CL_TXT + ']: ' + CL_E)
+			user = raw_input(CL_TXT + 'Preset name [' + CL_DEF + 'preset' + CL_TXT + ']: ' + CL_E)
 			if not user:
 				new_preset_name = 'preset'
 			else:
@@ -429,7 +429,7 @@ class ledgerer_class(object):
 
 		# override existing preset or cancel
 		if not which < 0 and not delete:
-			cancel = raw_input(CL_TXT + 'Override existing preset [' + CL_E + CL_DEF + 'no' + CL_E + CL_TXT + ']? ' + CL_E)
+			cancel = raw_input(CL_TXT + 'Override existing preset [' + CL_DEF + 'no' + CL_TXT + ']? ' + CL_E)
 			if not cancel:
 				print CL_TXT + 'Canceling ...' + CL_E
 				self.date()
@@ -445,7 +445,7 @@ class ledgerer_class(object):
 
 		elif delete and which > -1:
 			# delete the preset
-			cancel = raw_input(CL_TXT + 'Really delete the preset [' + CL_E + CL_DEF + 'no' + CL_E + CL_TXT + ']? ' + CL_E)
+			cancel = raw_input(CL_TXT + 'Really delete the preset [' + CL_DEF + 'no' + CL_TXT + ']? ' + CL_E)
 			if not cancel:
 				print CL_TXT + 'Canceling ...' + CL_E
 				self.date()
