@@ -45,7 +45,7 @@ else:
 
 # getting the variables from the settings file - don't change the values here!
 
-sort_ledger_file = configuration.sort_ledger_file
+modify_ledger_file = configuration.modify_ledger_file
 
 default_transaction_name = configuration.default_transaction_name
 default_account_one_name = configuration.default_account_one_name
@@ -246,6 +246,60 @@ class ledgerer_class(object):
 				self.save_preset(delete=user[2:])
 		if not user:
 			user = default_transaction_name
+
+		# cleared / pending feature ... only if enabled in configuration file ... it will find and clear the trans.
+		if user[0:2] == '* ' and modify_ledger_file:
+			# getting the original data
+			f = open(ledger_file, 'r')
+			original_raw = f.read()
+			original = original_raw.splitlines()
+			f.close()
+
+			# search line in which the to-be-cleared transaction is in (it has to have a '!' as well)
+			# and search endline, used in output-showing
+			line = -1
+			for y, x in enumerate(original):
+				if user[2:] in x and '!' in x:
+					line = y
+			endline = -1
+			for x in xrange(line, len(original)):
+				if original[x] == '' or x == len(original)-1:
+					endline = x
+					break
+
+			# modify this specific line
+			if line > -1:
+				old_startdate = original[line][0: original[line].find(' ') ]
+				old_transaction = original[line][ original[line].find('!')+2: ]
+				original[line] = old_startdate + '=' + self.str_date + ' * ' + old_transaction
+
+				# show and ask for modification
+				print
+				print CL_TXT + '- - - - -' + CL_E
+
+				for x in xrange(line,endline):
+					print original[x]
+
+				print CL_TXT + '- - - - -' + CL_E
+				print
+
+				# ask if output should be appended
+				user = raw_input(CL_TXT + 'Modify this entry this way? [' + CL_DEF + 'yes' + CL_TXT + ']: ' + CL_E)
+				# go back
+				if user == 'n' or user == 'no':
+					self.date()
+				else:
+					end(user)
+
+					output = '\n'.join(original)
+					f = open(ledger_file, 'w')
+					f.write( output )
+					f.close()
+					self.date()
+
+		# add clared if not pending state was set
+		if not user[0:2] == '! ':
+			user = '* ' + user
 		end(user)
 
 		# preset or manual input?
@@ -324,7 +378,7 @@ class ledgerer_class(object):
 		end(user)
 		self.str_accounts_amount.append(user)
 
-		# at least one more post is needed for transaction. repeat "while" until a correct input is done
+		# at least one more post is needed for transaction. repeat 'while' until a correct input is done
 		account_next = True
 		account_next_atleast_one_amount = False
 		account_next_number = len(self.str_accounts)+1
@@ -501,7 +555,7 @@ class ledgerer_class(object):
 			f.close()
 
 		# add new entry on correct position, if configuration for this feature is enabled
-		elif len(original) > 1 and sort_ledger_file:
+		elif len(original) > 1 and modify_ledger_file:
 
 			# some markers to find the index for the date before new entrys date and the one after it
 			before_new 		= -1
@@ -570,7 +624,7 @@ class ledgerer_class(object):
 				f.close()
 
 		# simple append to the given file
-		elif len(original) > 1 and not sort_ledger_file:
+		elif len(original) > 1 and not modify_ledger_file:
 
 			f = open(ledger_file, 'a')
 			f.write('\n\n' + self.final_str)

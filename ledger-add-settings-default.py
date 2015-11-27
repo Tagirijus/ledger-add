@@ -4,16 +4,17 @@
 
 # !!! ATTENTION !!!
 #
-# The following option 'sort_ledger_file' will not only append new data to your file,
-# but also rewrite the file with sorted entries. It is only useful, if you like to add
-# older entries afterwards, while keeping the corrrect order of the entries in the
-# journal-file. If there are bugs in the code, this function could totally destroy your
-# original ledger-journal file. Chose 'False', if you like to be more save.
-# Otherwise chose 'True' and feel free to trust my non-professional development skills. (-;
+# The following option 'modify_ledger_file' will not only append new data to your file,
+# but also rewrite the file with sorted and/or modified entries. It is only useful, if
+# you like to add older entries afterwards, while keeping the corrrect order of the entries
+# in the journal-file. And it is used for the cleared/pending transaction feature!
+# If there are bugs in the code, this function could totally destroy your original
+# ledger-journal file. Chose 'False', if you like to be more save. Otherwise chose
+# 'True' and feel free to trust my non-professional development skills. (-;
 #
 # !!! ATTENTION !!!
 
-sort_ledger_file = True
+modify_ledger_file = True
 
 
 # some default values
