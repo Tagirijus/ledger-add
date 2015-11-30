@@ -349,7 +349,7 @@ class ledgerer_class(object):
 
 		# generate correct default account name
 		if '{name}' in default_account_one_name:
-			default_account_one_name_str = default_account_one_name.replace('{name}', self.str_name)
+			default_account_one_name_str = default_account_one_name.replace('{name}', self.str_name.replace('* ', '').replace('! ',''))
 		else:
 			default_account_one_name_str = default_account_one_name
 
