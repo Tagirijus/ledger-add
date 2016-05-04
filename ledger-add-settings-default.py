@@ -22,6 +22,7 @@ modify_ledger_file = True
 default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
 default_commodity = '€'
+ask_commodity = False
 
 # info_text and color variables - and boolean for switching between color modes
 

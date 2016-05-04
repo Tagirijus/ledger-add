@@ -12,7 +12,7 @@ import os, sys, datetime, imp
 ### ### ### load configurarion file for variables
 ### ### ###
 
-# !!!!! SET YOU INDIVIDUAL SETTINGS FILE HERE
+# !!!!! SET YOUR INDIVIDUAL SETTINGS FILE HERE
 # !!!!! IT MUST BE SET UP LIKE THE 'ledger-add-settings-default.py' FILE
 ####
 ###
@@ -50,6 +50,7 @@ modify_ledger_file = configuration.modify_ledger_file
 default_transaction_name = configuration.default_transaction_name
 default_account_one_name = configuration.default_account_one_name
 default_commodity = configuration.default_commodity
+ask_commodity = configuration.ask_commodity
 
 info_text	 =  configuration.info_text
 
@@ -323,7 +324,11 @@ class ledgerer_class(object):
 			if user2:
 				user += '\n ; ' + user2
 		self.str_transaction_comment = user
-		self.commodity()
+		if ask_commodity:
+			self.commodity()
+		else:
+			self.str_commodity = default_commodity
+			self.accounts()
 
 
 	def commodity(self):
