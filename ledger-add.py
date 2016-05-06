@@ -375,7 +375,10 @@ class ledgerer_class(object):
 		user = raw_input(CL_TXT + 'Account 1 name [' + CL_DEF + default_account_one_name_str + CL_TXT + ']: ' + CL_E)
 		# go back
 		if user == '<':
-			self.commodity()
+			if ask_commodity:
+				self.commodity()
+			else:
+				self.transaction_comment()
 		# no input? use default!
 		if not user:
 			user = default_account_one_name_str
