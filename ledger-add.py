@@ -33,35 +33,48 @@ path_to_project = os.path.dirname(os.path.realpath(__file__))
 # check if user set an individual settings file, or load default otherwise
 
 if os.path.isfile(path_to_project + '/' + SETTINGS_FILE):
+	print 'Loading configuration PERSONAL'
 	configuration = imp.load_source('ledger-add-settings', path_to_project + '/' + SETTINGS_FILE)
+	configuration_def = imp.load_source('ledger-add-settings-default', path_to_project + '/ledger-add-settings-default.py')
 else:
 	if os.path.isfile(path_to_project + '/ledger-add-settings-default.py'):
-		configuration = imp.load_source('ledger-add-settings', path_to_project + '/ledger-add-settings-default.py')
+		configuration = imp.load_source('ledger-add-settings-default', path_to_project + '/ledger-add-settings-default.py')
 	else:
 		print 'No settings file found.'
 		exit()
 
 
 
+# configuartion function
+
+def config(att):
+	if hasattr(configuration, att):
+		return getattr(configuration, att)
+	else:
+		print 'Please update your personal settings file.'
+		return getattr(configuration_def, att)
+
+
+
 # getting the variables from the settings file - don't change the values here!
 
-modify_ledger_file = configuration.modify_ledger_file
+modify_ledger_file = config('modify_ledger_file')
 
-default_transaction_name = configuration.default_transaction_name
-default_account_one_name = configuration.default_account_one_name
-default_commodity = configuration.default_commodity
-ask_commodity = configuration.ask_commodity
+default_transaction_name = config('default_transaction_name')
+default_account_one_name = config('default_account_one_name')
+default_commodity = config('default_commodity')
+ask_commodity = config('ask_commodity')
 
-info_text	 =  configuration.info_text
+info_text	 =  config('info_text')
 
-colorize = configuration.colorize
+colorize = config('colorize')
 
-CL_TXT = configuration.CL_TXT
-CL_INF = configuration.CL_INF
-CL_DEF = configuration.CL_DEF
-CL_DIM = configuration.CL_DIM
-CL_OUT = configuration.CL_OUT
-CL_E = configuration.CL_E
+CL_TXT = config('CL_TXT')
+CL_INF = config('CL_INF')
+CL_DEF = config('CL_DEF')
+CL_DIM = config('CL_DIM')
+CL_OUT = config('CL_OUT')
+CL_E = config('CL_E')
 
 ### ### ###
 ### ### ### load configurarion file for variables - END
