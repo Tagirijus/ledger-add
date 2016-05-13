@@ -391,7 +391,10 @@ class ledgerer_class(object):
 			user = raw_input(CL_TXT + 'Account 1 amount: ' + CL_E)
 			# go back
 			if user == '<':
-				self.commodity()
+				if ask_commodity:
+					self.commodity()
+				else:
+					self.transaction_comment()
 			if not user:
 				print CL_INF + 'First account needs an amount.' + CL_E
 			else:
