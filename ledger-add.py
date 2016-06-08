@@ -466,8 +466,16 @@ class ledgerer_class(object):
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
+		# sum all amounts for informational output
+		the_sum = 0.0
+		for x in self.str_accounts_amount:
+			try:
+				the_sum += float( x.replace(',', '.') )
+			except Exception, e:
+				pass
 		print CL_OUT + self.final_str + CL_E
 		print CL_TXT + '- - - - -' + CL_E
+		print CL_DIM + 'Sum of values: ' + str(the_sum).replace('.', ',') + ' ' + self.str_commodity + CL_E
 		print
 
 		# ask if output should be appended
