@@ -247,6 +247,7 @@ class ledgerer_class(object):
 		preset = self.preset('list')
 		print CL_DIM + '"p PRESETNAME" = chose preset. "d PRESETNAME" = delete preset.' + CL_E
 		user = raw_input(CL_TXT + 'Name or preset [' + CL_DEF + default_transaction_name + CL_TXT + ']: ' + CL_E)
+		end(user)
 		# go back
 		if user == '<':
 			self.date()
