@@ -180,6 +180,11 @@ class ledgerer_class(object):
 			# get its values from found preset
 			# get name, comment and commodity
 			self.str_name = self.preset_content[which][1]
+			if '[*]' in self.str_name:
+				# ask user for input for [*]
+				print CL_TXT + 'Preset transaction name: ' + CL_DEF + self.str_name + CL_E
+				user = raw_input(CL_TXT + 'Replace ' + CL_DEF + '[*]' + CL_TXT + ' with: ' + CL_E)
+				self.str_name = self.str_name.replace('[*]', user)
 			self.str_transaction_comment = self.preset_content[which][2]
 			self.str_commodity = self.preset_content[which][3]
 
