@@ -23,6 +23,7 @@ default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replaced with name of transaction
 default_commodity = '€'
 ask_commodity = False
+ask_account_comment = True
 
 # info_text and color variables - and boolean for switching between color modes
 

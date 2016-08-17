@@ -64,6 +64,7 @@ default_transaction_name = config('default_transaction_name')
 default_account_one_name = config('default_account_one_name')
 default_commodity = config('default_commodity')
 ask_commodity = config('ask_commodity')
+ask_account_comment = config('ask_account_comment')
 
 info_text	 =  config('info_text')
 
@@ -370,6 +371,7 @@ class ledgerer_class(object):
 		# set up an array for the transaction posts
 		self.str_accounts = []
 		self.str_accounts_amount = []
+		self.str_accounts_comment = []
 
 		# generate correct default account name
 		if '{name}' in default_account_one_name:
@@ -408,6 +410,17 @@ class ledgerer_class(object):
 		end(user)
 		self.str_accounts_amount.append(user)
 
+		# get the comment for the first account
+		if ask_account_comment:
+			user = raw_input(CL_TXT + 'Account 1 comment: ' + CL_E)
+			if user == '<':
+				if ask_commodity:
+					self.commodity()
+				else:
+					self.transaction_comment()
+			end(user)
+			self.str_accounts_comment.append(user)
+
 		# at least one more post is needed for transaction. repeat 'while' until a correct input is done
 		account_next = True
 		account_next_atleast_one_amount = False
@@ -441,14 +454,25 @@ class ledgerer_class(object):
 					elif not user and not account_next_atleast_one_amount:
 						account_next_atleast_one_amount = True
 						account_next_amount = False
-						account_next_number += 1
 						end(user)
 						self.str_accounts_amount.append(user)
 					else:
 						account_next_amount = False
-						account_next_number += 1
 						end(user)
 						self.str_accounts_amount.append(user)
+
+				# and get the comment for the specific account as well
+				if ask_account_comment:
+					user = raw_input(CL_TXT + 'Account ' + str(account_next_number) + ' comment: ' + CL_E)
+					if user == '<':
+						if ask_commodity:
+							self.commodity()
+						else:
+							self.transaction_comment()
+					end(user)
+					self.str_accounts_comment.append(user)
+
+				account_next_number += 1
 
 		self.final_add()
 
@@ -469,6 +493,10 @@ class ledgerer_class(object):
 			# also add its amount, if there is one given
 			if self.str_accounts_amount[x]:
 				self.final_str += '  ' + self.str_commodity + ' ' + self.str_accounts_amount[x]
+			# add the comment, if there is one
+			if self.str_accounts_comment[x]:
+				self.final_str += '\n ; ' + self.str_accounts_comment[x]
+			# add a line, if it's not the last entry
 			if not x == len(self.str_accounts)-1:
 				self.final_str += '\n'
 		# sum all amounts for informational output
