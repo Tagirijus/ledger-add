@@ -20,7 +20,7 @@ modify_ledger_file = True
 # some default values
 
 default_transaction_name = 'Einkaufen'
-default_account_one_name = 'in:{name}'			# {name} = replace with name of transaction
+default_account_one_name = 'in:{name}'			# {name} = replaced with name of transaction
 default_commodity = '€'
 ask_commodity = False
 
