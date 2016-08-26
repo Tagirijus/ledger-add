@@ -21,14 +21,23 @@ modify_ledger_file = True
 
 default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replaced with name of transaction
+default_receiving_account = 'Assets'
 default_commodity = '€'
 ask_commodity = False
 ask_account_comment = True
+dec_sep = ',' # decimal seperator
 
 # info_text and color variables - and boolean for switching between color modes
 
 info_text	 =  'Infotext line 1\n'
 info_text	 += 'Infotext line 2\n'
+
+# date stuff
+
+date_sep	= '-'			# only use '/' or '-'
+date_format	= '%Y' + date_sep + '%m' + date_sep + '%d'	# don't change this !
+
+# color stuff
 
 colorize = True
 

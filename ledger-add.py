@@ -5,7 +5,7 @@
 # There's a preset system: Press 'p' to chose a preset and save one in the final prompt.
 #
 
-import os, sys, datetime, imp
+import os, sys, datetime, imp, ledgerparse
 
 
 ### ### ###
@@ -62,11 +62,15 @@ modify_ledger_file = config('modify_ledger_file')
 
 default_transaction_name = config('default_transaction_name')
 default_account_one_name = config('default_account_one_name')
+default_receiving_account = config('default_receiving_account')
 default_commodity = config('default_commodity')
 ask_commodity = config('ask_commodity')
 ask_account_comment = config('ask_account_comment')
+dec_sep = config('dec_sep')
 
-info_text	 =  config('info_text')
+info_text =  config('info_text')
+
+date_format = config('date_format')
 
 colorize = config('colorize')
 
@@ -91,6 +95,7 @@ info_text = CL_INF + info_text + CL_E
 
 # check arguments and environment variable 'LEDGER_FILE_PATH' for ledger file
 arguments = sys.argv
+
 # no arguments? check environment variable
 if len(arguments) < 2:
 	try:
@@ -103,10 +108,10 @@ else:
 	# using the argument as the file
 	ledger_file = arguments[1]
 
-# check if it exists and if it's a real file
+# check if it exists and if it's no directory / if it's a real file
 if os.path.exists(ledger_file):
 	if not os.path.isfile(ledger_file):
-		print CL_INF + 'Given \'ledger file\' is not a file.' + CL_E
+		print CL_INF + 'Given \'ledger file\' seems to be a directory.' + CL_E
 		exit()
 # create new file otherwise
 else:
@@ -129,7 +134,7 @@ def end(s):
 
 def get_date(inp):
 	# string into date
-	return datetime.datetime.strptime(inp, '%Y/%m/%d')
+	return datetime.datetime.strptime(inp, date_format)
 
 def validate_date(d):
 	# simple check, if the string d is a valid date format
@@ -139,12 +144,19 @@ def validate_date(d):
 	except ValueError:
 		return False
 
+
 class ledgerer_class(object):
 	def __init__(self, the_file):
 		if not os.path.isfile(the_file):
 			# exits the programm, if the given environment variable or argument is not a file
 			print CL_INF + 'Given argument is not a file.' + CL_E
 			exit()
+
+		# parse the transactions into self.Transactions
+		f = open(the_file, 'r')
+		the_journal = f.read()
+		f.close()
+		self.Journal = ledgerparse.string_to_ledger(the_journal)
 
 
 	def preset(self, what):
@@ -211,6 +223,103 @@ class ledgerer_class(object):
 		return False
 
 
+	def use_code(self, user_code):
+		# search this code in the journal
+		trans_id = -1
+		for i, trans in enumerate(self.Journal):
+			if user_code == trans.code:
+				trans_id = i
+
+		# if not found, ask for name again
+		if trans_id < 0:
+			print
+			print CL_INF + 'No existing transaction with this code was found. Enter another transaction name, please.' + CL_E
+			print
+			self.name()
+
+		# found, so assign the needed variables from the found transaction
+		else:
+			# set up an array for the transaction posts
+			self.str_accounts = []
+			self.str_accounts_amount = []
+			self.str_accounts_comment = []
+
+			# get the transaction name / payee (and state and stuff)
+			tmp_code = ' (' + self.Journal[trans_id].code + ') '
+			self.str_name = self.Journal[trans_id].state + tmp_code + self.Journal[trans_id].payee
+
+			# get the transaction comment
+			self.str_transaction_comment = '\n ; '.join([c.strip() for c in self.Journal[trans_id].comments])
+
+			# ask which account is the paying account
+			for num, acc in enumerate(self.Journal[trans_id].accounts):
+				tmp_acc_commodity = ' ' + acc.commodity if acc.commodity else ''
+				tmp_acc_amount = ' (' + str(acc.amount).replace('.', dec_sep) + tmp_acc_commodity + ')' if acc.amount > 0 else ''
+				print CL_DEF + '(' + str(num+1) + ') ' + acc.name + tmp_acc_amount + CL_E
+				# get the commodity as well
+				if acc.commodity:
+					self.str_commodity = acc.commodity
+			# correct commodity, if no commodity was set
+			if not self.str_commodity:
+				if ask_commodity:
+					# change the commodity
+					user = raw_input(CL_TXT + 'Commodity [' + CL_DEF + default_commodity + CL_TXT + ']: ' + CL_E)
+					# go back
+					if user == '<':
+						self.name()
+					# no input? use default!
+					if not user:
+						self.str_commodity = default_commodity
+					end(user)
+				else:
+					self.str_commodity = default_commodity
+			# go on with the account asking
+			user = raw_input(CL_TXT + 'Paying account: ' + CL_E )
+			# go back
+			if user == '<':
+				self.name()
+			end(user)
+			# work with the input, if it's correct
+			try:
+				# get the acconuts name
+				self.str_accounts.append( self.Journal[trans_id].accounts[int(user)-1].name )
+				# get the accounts amount
+				self.str_accounts_amount.append( '' )
+				pay_this = str(self.Journal[trans_id].accounts[int(user)-1].amount).replace('.', dec_sep)
+				# get the accounts comments
+				#if len(self.Journal[trans_id].accounts[int(user)-1].comments) > 0:
+				self.str_accounts_comment.append( '\n ; '.join([c.strip() for c in self.Journal[trans_id].accounts[int(user)-1].comments]) )
+				# else:
+				# 	self.str_accounts_comment.append('')
+			except Exception:
+				print CL_INF + 'Wrong input, try again.' + CL_E
+				self.use_code(user_code)
+
+			# ask which account is the receiving account
+			user = raw_input(CL_TXT + 'Receiving account [' + CL_DEF + default_receiving_account + CL_TXT + ']: ' + CL_E )
+			# go back
+			if user == '<':
+				self.name()
+			end(user)
+			# use default, if no input
+			if not user:
+				user = default_receiving_account
+			# set the acconuts name
+			self.str_accounts.append( user )
+			# set the accounts amount
+			self.str_accounts_amount.append( pay_this )
+			# add blank comment to this
+			self.str_accounts_comment.append('')
+
+			# reverse the order of the accounts
+			self.str_accounts.sort(reverse=True)
+			self.str_accounts_amount.sort(reverse=True)
+			self.str_accounts_comment.sort(reverse=True)
+
+			# finally make the output
+			self.final_add()
+
+
 	def date(self):
 		print
 
@@ -218,7 +327,7 @@ class ledgerer_class(object):
 		print info_text
 
 		# the actual date, used as a default template
-		self.today = datetime.datetime.now().strftime('%Y/%m/%d')
+		self.today = datetime.datetime.now().strftime(date_format)
 
 		user = ''
 		# repeat while the input is not a valid date (so it goes on, if the user inputs a correct date)
@@ -235,7 +344,7 @@ class ledgerer_class(object):
 					# it is a day difference
 					difference = int(user)
 					new_date = datetime.datetime.now() + datetime.timedelta(days=difference)
-					user = new_date.strftime('%Y/%m/%d')
+					user = new_date.strftime(date_format)
 					input_correct = validate_date(user)
 				except Exception, e:
 					# it's a valid date ... or not
@@ -244,7 +353,7 @@ class ledgerer_class(object):
 			if not input_correct:
 				end(user)
 				print CL_INF + 'Wrong input.' + CL_E
-		self.str_date = get_date(user).strftime('%Y/%m/%d')
+		self.str_date = get_date(user).strftime(date_format)
 		self.name()
 
 
@@ -268,7 +377,7 @@ class ledgerer_class(object):
 		if not user:
 			user = default_transaction_name
 
-		# cleared / pending feature ... only if enabled in configuration file ... it will find and clear the trans.
+		# cleared / pending feature ... only if enabled in configuration file (modify_ledger_file) ... it will find and clear the trans.
 		if user[0:2] == '* ' and modify_ledger_file:
 			# getting the original data
 			f = open(ledger_file, 'r')
@@ -316,9 +425,14 @@ class ledgerer_class(object):
 					f = open(ledger_file, 'w')
 					f.write( output )
 					f.close()
+					self.sort_journal(ledger_file)
 					self.date()
 
-		# add clared if not pending state was set
+		# a simple code was input "(200)" so use this transactions values form an existing one
+		if user[0:1] == '(' and user[-1:] == ')':
+			self.use_code(user[1:-1])
+
+		# add cleared if not pending state was set
 		if not user[0:2] == '! ':
 			user = '* ' + user
 		end(user)
@@ -340,7 +454,7 @@ class ledgerer_class(object):
 		end(user)
 		if user:
 			user2 = raw_input(CL_TXT + 'Transaction comment 2: ' + CL_E)
-			end(user)
+			end(user2)
 			if user2:
 				user += '\n ; ' + user2
 		self.str_transaction_comment = user
@@ -604,6 +718,30 @@ class ledgerer_class(object):
 		self.date()
 
 
+	def sort_journal(self, file):
+		# sort the given ledger journal file
+		# !!! !!! !!!
+		# ATTENTION: if I made a mistake, this could destroy the whole journal !!!
+		# !!! !!! !!!
+
+		# check if file exists
+		if os.path.isfile(file):
+			f = open(file, 'r')
+			the_journal = f.read()
+			f.close()
+		else:
+			print 'Argument is not an existing file!'
+			return
+
+		# sort it
+		the_journal_sorted = '\n\n'.join([str(x) for x in sorted(ledgerparse.string_to_ledger(the_journal), key=lambda y: y.date)])
+
+		# save it to the SAME file !!!!!!
+		f = open(file, 'w')
+		f.write(the_journal_sorted)
+		f.close()
+
+
 	def append_file(self):
 		print CL_TXT + 'Adding entry ...' + CL_E
 
@@ -620,81 +758,16 @@ class ledgerer_class(object):
 			f.write(self.final_str)
 			f.close()
 
-		# add new entry on correct position, if configuration for this feature is enabled
-		elif len(original) > 1 and modify_ledger_file:
-
-			# some markers to find the index for the date before new entrys date and the one after it
-			before_new 		= -1
-			before_new_end 	= -1
-			after_new 		= -1
-			# and get the date as da dateimte object from the entry
-			new_entry_date = get_date( self.str_date )
-
-			# check if there is a date after the new entrys date and get its position
-			for x in xrange(0, len(original)):
-				# check if the actual line contains a date (the first 10 characters)
-				if validate_date( original[x][0:10] ):
-					# check if the found lines date is above new entrys date
-					if new_entry_date < get_date( original[x][0:10] ):
-						after_new = x
-						break
-
-			# there is a date after, search for date before new entrys date
-			if after_new > -1:
-				for x in xrange(after_new, -1, -1):
-					# check if the actual line contains a date (the first 10 characters)
-					if validate_date( original[x][0:10] ):
-						# check if the found lines date is under new entrys date
-						if new_entry_date > get_date( original[x][0:10] ):
-							before_new = x
-							# search end of before-entry
-							for y in xrange(x, after_new):
-								if original[y] == '':
-									before_new_end = y
-									break
-							break
-
-				# prepare output string
-				output_content = ''
-
-				# there is a date before, add antry in between
-				added = False
-				if before_new > -1:
-					for x in xrange(0, len(original)):
-						# just add a line into the ouput string
-						if x < before_new_end or added:
-							output_content += original[x]
-						# or add the new entry
-						else:
-							output_content += '\n' + self.final_str + '\n'
-							added = True
-
-						# add line break if it is not the last line
-						if x < len(original)-1:
-							output_content += '\n'
-
-				# there is no date before, add it as first entry
-				else:
-					output_content += self.final_str + '\n\n' + original_raw
-
-
-				# write ouput string
-				f = open(ledger_file, 'w')
-				f.write(output_content)
-				f.close()
-
-			# there is no date after new entrys date - it has to be the newest - so just append
-			else:
-				f = open(ledger_file, 'a')
-				f.write('\n\n' + self.final_str)
-				f.close()
-
 		# simple append to the given file
-		elif len(original) > 1 and not modify_ledger_file:
+		elif len(original) > 1:
 
 			f = open(ledger_file, 'a')
 			f.write('\n\n' + self.final_str)
 			f.close()
+
+		# sort the file, if modify_ledger_file is True
+		if modify_ledger_file:
+			self.sort_journal(ledger_file)
 
 		# start from the beginning
 		print
