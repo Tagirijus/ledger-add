@@ -1,8 +1,12 @@
 # Ledger command line accounting - transaction adder in python
 
-## Note
+## Note / ATTENTION!
 
 Use this program with care. I am no professional developer and I might have coded something that will destroy your ledger journal without intention. Always keep backups of your files!
+
+When `modify_ledger` is `True` the ledger-add script might destroy your journal! Handle with care. The sort-function (it will sort your ledger journal by date) will take every non-transaction, set it to the beginning and append all the transactions. So it would be a good idea to have all the comments, aliases, etc. either on the beginning of the journal, or even keep it as clean as possible and use multiple journals. I have one for all aliases and functions and stuff and multiple transactions-only journals for every year. My ledger-add script always just edits the transactions-journals. Just an idea. (-;
+
+For modifying and sorting the script needs my other script `ledger-parse`. Always keep this both scripts up to date!
 
 
 ## Short description

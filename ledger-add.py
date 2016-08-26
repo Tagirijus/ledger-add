@@ -51,18 +51,20 @@ def config(att):
 	if hasattr(configuration, att):
 		return getattr(configuration, att)
 	else:
-		print 'Please update your personal settings file.'
+		print 'Please update your personal settings file:', att
 		return getattr(configuration_def, att)
 
 
 
 # getting the variables from the settings file - don't change the values here!
 
+aliases = config('aliases')
 modify_ledger_file = config('modify_ledger_file')
 
 default_transaction_name = config('default_transaction_name')
 default_account_one_name = config('default_account_one_name')
 default_receiving_account = config('default_receiving_account')
+invoice_transaction_add = config('invoice_transaction_add')
 default_commodity = config('default_commodity')
 ask_commodity = config('ask_commodity')
 ask_account_comment = config('ask_account_comment')
@@ -125,6 +127,23 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 
 # functions and classes
+
+def balance_to_other_accounts(array_of_accounts, id):
+	own_amount = array_of_accounts[id].amount
+	others = 0.0
+	for which, acc in enumerate(array_of_accounts):
+		if not which == id:
+			others += acc.amount
+	return own_amount - others
+
+def alias_it(text):
+	out = []
+	for x in text.split(':'):
+		if x in aliases.keys():
+			out.append( aliases[x] )
+		else:
+			out.append( x )
+	return ':'.join(out)
 
 def end(s):
 	# exits the programm, if s is a dot - used in the functions of the ledger_class
@@ -246,7 +265,7 @@ class ledgerer_class(object):
 
 			# get the transaction name / payee (and state and stuff)
 			tmp_code = ' (' + self.Journal[trans_id].code + ') '
-			self.str_name = self.Journal[trans_id].state + tmp_code + self.Journal[trans_id].payee
+			self.str_name = self.Journal[trans_id].state + tmp_code + self.Journal[trans_id].payee + invoice_transaction_add
 
 			# get the transaction comment
 			self.str_transaction_comment = '\n ; '.join([c.strip() for c in self.Journal[trans_id].comments])
@@ -254,7 +273,7 @@ class ledgerer_class(object):
 			# ask which account is the paying account
 			for num, acc in enumerate(self.Journal[trans_id].accounts):
 				tmp_acc_commodity = ' ' + acc.commodity if acc.commodity else ''
-				tmp_acc_amount = ' (' + str(acc.amount).replace('.', dec_sep) + tmp_acc_commodity + ')' if acc.amount > 0 else ''
+				tmp_acc_amount = ' (' + str(acc.amount).replace('.', dec_sep) + tmp_acc_commodity + ')' if acc.amount != 0 else ''
 				print CL_DEF + '(' + str(num+1) + ') ' + acc.name + tmp_acc_amount + CL_E
 				# get the commodity as well
 				if acc.commodity:
@@ -274,23 +293,21 @@ class ledgerer_class(object):
 				else:
 					self.str_commodity = default_commodity
 			# go on with the account asking
-			user = raw_input(CL_TXT + 'Paying account: ' + CL_E )
+			print CL_TXT + 'Chose one or more accounts: e.g. "1,2,4"' + CL_E
+			user = raw_input(CL_TXT + 'Paying account(s): ' + CL_E )
 			# go back
 			if user == '<':
 				self.name()
 			end(user)
 			# work with the input, if it's correct
 			try:
-				# get the acconuts name
-				self.str_accounts.append( self.Journal[trans_id].accounts[int(user)-1].name )
-				# get the accounts amount
-				self.str_accounts_amount.append( '' )
-				pay_this = str(self.Journal[trans_id].accounts[int(user)-1].amount).replace('.', dec_sep)
-				# get the accounts comments
-				#if len(self.Journal[trans_id].accounts[int(user)-1].comments) > 0:
-				self.str_accounts_comment.append( '\n ; '.join([c.strip() for c in self.Journal[trans_id].accounts[int(user)-1].comments]) )
-				# else:
-				# 	self.str_accounts_comment.append('')
+				for paying_account in [int(splits) for splits in user.split(',')]:
+					# get the acconuts name
+					self.str_accounts.append( self.Journal[trans_id].accounts[int(paying_account)-1].name )
+					# get the accounts amount
+					self.str_accounts_amount.append( str( balance_to_other_accounts( self.Journal[trans_id].accounts, int(paying_account)-1 ) * -1).replace('.', dec_sep) )
+					# get the accounts comments
+					self.str_accounts_comment.append( '\n ; '.join([c.strip() for c in self.Journal[trans_id].accounts[int(paying_account)-1].comments]) )
 			except Exception:
 				print CL_INF + 'Wrong input, try again.' + CL_E
 				self.use_code(user_code)
@@ -305,16 +322,11 @@ class ledgerer_class(object):
 			if not user:
 				user = default_receiving_account
 			# set the acconuts name
-			self.str_accounts.append( user )
+			self.str_accounts.append( alias_it(user) )
 			# set the accounts amount
-			self.str_accounts_amount.append( pay_this )
+			self.str_accounts_amount.append( 0.0 )
 			# add blank comment to this
 			self.str_accounts_comment.append('')
-
-			# reverse the order of the accounts
-			self.str_accounts.sort(reverse=True)
-			self.str_accounts_amount.sort(reverse=True)
-			self.str_accounts_comment.sort(reverse=True)
 
 			# finally make the output
 			self.final_add()
@@ -505,7 +517,7 @@ class ledgerer_class(object):
 		if not user:
 			user = default_account_one_name_str
 		end(user)
-		self.str_accounts.append(user)
+		self.str_accounts.append( alias_it(user) )
 
 		# gets the amount for the transaction. first transaction post needs an amount
 		account_one_amount = False
@@ -534,6 +546,8 @@ class ledgerer_class(object):
 					self.transaction_comment()
 			end(user)
 			self.str_accounts_comment.append(user)
+		else:
+			self.str_accounts_comment.append('')
 
 		# at least one more post is needed for transaction. repeat 'while' until a correct input is done
 		account_next = True
@@ -553,7 +567,7 @@ class ledgerer_class(object):
 					account_next = False
 			else:
 				end(user)
-				self.str_accounts.append(user)
+				self.str_accounts.append( alias_it(user) )
 
 				# also check for the specific amount
 				account_next_amount = True
@@ -585,6 +599,8 @@ class ledgerer_class(object):
 							self.transaction_comment()
 					end(user)
 					self.str_accounts_comment.append(user)
+				else:
+					self.str_accounts_comment.append('')
 
 				account_next_number += 1
 
@@ -733,12 +749,17 @@ class ledgerer_class(object):
 			print 'Argument is not an existing file!'
 			return
 
+		# get everything besides the transactions
+		the_journal_other = ledgerparse.string_to_non_transactions(the_journal)
+		if the_journal_other:
+			the_journal_other += '\n\n'
+
 		# sort it
 		the_journal_sorted = '\n\n'.join([str(x) for x in sorted(ledgerparse.string_to_ledger(the_journal), key=lambda y: y.date)])
 
 		# save it to the SAME file !!!!!!
 		f = open(file, 'w')
-		f.write(the_journal_sorted)
+		f.write(the_journal_other + the_journal_sorted)
 		f.close()
 
 

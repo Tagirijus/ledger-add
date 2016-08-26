@@ -17,14 +17,22 @@
 modify_ledger_file = True
 
 
+# internal aliases
+
+aliases = {
+	'a': 'assets',
+	'e': 'expenses'
+	}
+
 # some default values
 
 default_transaction_name = 'Einkaufen'
 default_account_one_name = 'in:{name}'			# {name} = replaced with name of transaction
 default_receiving_account = 'Assets'
+invoice_transaction_add = ' [paid]'
 default_commodity = '€'
 ask_commodity = False
-ask_account_comment = True
+ask_account_comment = False
 dec_sep = ',' # decimal seperator
 
 # info_text and color variables - and boolean for switching between color modes
