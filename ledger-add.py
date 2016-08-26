@@ -128,14 +128,6 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 # functions and classes
 
-def balance_to_other_accounts(array_of_accounts, id):
-	own_amount = array_of_accounts[id].amount
-	others = 0.0
-	for which, acc in enumerate(array_of_accounts):
-		if not which == id:
-			others += acc.amount
-	return own_amount - others
-
 def alias_it(text):
 	out = []
 	for x in text.split(':'):
@@ -305,7 +297,7 @@ class ledgerer_class(object):
 					# get the acconuts name
 					self.str_accounts.append( self.Journal[trans_id].accounts[int(paying_account)-1].name )
 					# get the accounts amount
-					self.str_accounts_amount.append( str( balance_to_other_accounts( self.Journal[trans_id].accounts, int(paying_account)-1 ) * -1).replace('.', dec_sep) )
+					self.str_accounts_amount.append( str( self.Journal[trans_id].balance_account(int(paying_account)-1) * -1).replace('.', dec_sep) )
 					# get the accounts comments
 					self.str_accounts_comment.append( '\n ; '.join([c.strip() for c in self.Journal[trans_id].accounts[int(paying_account)-1].comments]) )
 			except Exception:
@@ -755,7 +747,7 @@ class ledgerer_class(object):
 			the_journal_other += '\n\n'
 
 		# sort it
-		the_journal_sorted = '\n\n'.join([str(x) for x in sorted(ledgerparse.string_to_ledger(the_journal), key=lambda y: y.date)])
+		the_journal_sorted = '\n\n'.join([str(x.get_original()) for x in sorted(ledgerparse.string_to_ledger(the_journal), key=lambda y: y.date)])
 
 		# save it to the SAME file !!!!!!
 		f = open(file, 'w')
