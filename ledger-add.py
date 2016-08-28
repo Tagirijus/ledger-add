@@ -844,7 +844,7 @@ class ledgerer_class(object):
 		for acc in trans.accounts:
 			if acc.amount.amount > 0:
 				# get its comment for output
-				tmp_acc_com = ' (' + ', '.join([x.strip() for x in acc.comments]) + ')'
+				tmp_acc_com = ' (' + ', '.join([x.strip() for x in acc.comments]) + ')' if len(acc.comments) > 0 else ''
 				print
 				print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
 				print CL_TXT + 'Account: ' + CL_ACC + acc.name + CL_DIM + tmp_acc_com + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
@@ -914,6 +914,7 @@ class ledgerer_class(object):
 					# append to file
 					f = open(tmp_file, 'a')
 					f.write( appender_pre + years[1] )
+					f.close()
 
 				# file does not exist so create totally new
 				else:
