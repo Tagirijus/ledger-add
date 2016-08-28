@@ -859,6 +859,7 @@ class ledgerer_class(object):
 					end(user)
 					if user:
 						try:
+							# user enters number
 							if afa_table.keys()[int(user)-1] in afa_table:
 								afa_item = afa_table.keys()[int(user)-1]
 								afa_item_years = afa_table[afa_item][0]
@@ -866,7 +867,9 @@ class ledgerer_class(object):
 								correct = True
 						except Exception:
 							try:
-								afa_item_name = afa_def_account + ':' + alias_it(user)
+								# user enters string
+								afa_item_name = alias_it( afa_def_account + ':' + user )
+								print 'DEBUG:', afa_item_name
 								afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
 								end(user)
 								if not afa_item_years:
