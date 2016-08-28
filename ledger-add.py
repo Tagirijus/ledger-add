@@ -54,6 +54,29 @@ def config(att):
 		print 'Please update your personal settings file:', att
 		return getattr(configuration_def, att)
 
+def journal_file(name=None, year=None):
+	# get automatic year or user input
+	if year == None:
+		year = datetime.datetime.now().strftime('%Y')
+	else:
+		year = str(year)
+
+	# generate automatic filename
+	if name == None:
+		name = default_filename.replace('{YEAR}', year)
+
+	# LEDGER_FILE_PATH is set
+	if 'LEDGER_FILE_PATH' in os.environ:
+		return os.environ['LEDGER_FILE_PATH'] + '/' + name
+
+	# it is not set, use teh path from the settings file
+	elif os.path.exists(default_ledger_path):
+		return default_ledger_path + '/' + name
+
+	# use the actual working dir instead if nothign exists, phew
+	else:
+		return name
+
 
 
 # getting the variables from the settings file - don't change the values here!
@@ -72,7 +95,15 @@ dec_sep = config('dec_sep')
 
 info_text =  config('info_text')
 
+split_journal_into_years = config('split_journal_into_years')
+default_filename = config('default_filename')
+default_ledger_path = config('default_ledger_path')
 date_format = config('date_format')
+
+afa_accounts = config('afa_accounts')
+afa_threshold_amount = config('afa_threshold_amount')
+afa_table = config('afa_table')
+afa_def_account = config('afa_def_account')
 
 colorize = config('colorize')
 
@@ -80,6 +111,7 @@ CL_TXT = config('CL_TXT')
 CL_INF = config('CL_INF')
 CL_DEF = config('CL_DEF')
 CL_DIM = config('CL_DIM')
+CL_ACC = config('CL_ACC')
 CL_OUT = config('CL_OUT')
 CL_E = config('CL_E')
 
@@ -100,12 +132,7 @@ arguments = sys.argv
 
 # no arguments? check environment variable
 if len(arguments) < 2:
-	try:
-		ledger_file = os.environ['LEDGER_FILE_PATH'] + '/ledger_' + datetime.datetime.now().strftime('%Y') + '.journal'
-	except Exception:
-		# nothing set, quit programm
-		print CL_INF + 'No arguments given and environment variable LEDGER_FILE_PATH is not set.' + CL_E
-		exit()
+	ledger_file = journal_file()
 else:
 	# using the argument as the file
 	ledger_file = arguments[1]
@@ -130,8 +157,8 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 def alias_it(text):
 	out = []
-	for x in text.split(':'):
-		if x in aliases.keys():
+	for c, x in enumerate(text.split(':')):
+		if x in aliases.keys() and c > 0:
 			out.append( aliases[x] )
 		else:
 			out.append( x )
@@ -163,7 +190,7 @@ class ledgerer_class(object):
 			print CL_INF + 'Given argument is not a file.' + CL_E
 			exit()
 
-		# parse the transactions into self.Transactions
+		# parse the transactions into self.Journal
 		f = open(the_file, 'r')
 		the_journal = f.read()
 		f.close()
@@ -297,7 +324,7 @@ class ledgerer_class(object):
 					# get the acconuts name
 					self.str_accounts.append( self.Journal[trans_id].accounts[int(paying_account)-1].name )
 					# get the accounts amount
-					self.str_accounts_amount.append( str( self.Journal[trans_id].balance_account(int(paying_account)-1) * -1).replace('.', dec_sep) )
+					self.str_accounts_amount.append( self.Journal[trans_id].balance_account(int(paying_account)-1, True) )
 					# get the accounts comments
 					self.str_accounts_comment.append( '\n ; '.join([c.strip() for c in self.Journal[trans_id].accounts[int(paying_account)-1].comments]) )
 			except Exception:
@@ -782,10 +809,168 @@ class ledgerer_class(object):
 		if modify_ledger_file:
 			self.sort_journal(ledger_file)
 
+		# check for afa feature
+		# if it is not disabled ...
+		if not 'disabled' in afa_accounts:
+			# ... check for afa_accounts
+			if len(afa_accounts) > 0:
+				# ... check if one entered account is in the afa_accounts
+				for afa_check in afa_accounts:
+					for str_accs in self.str_accounts:
+						if afa_check.lower() in str_accs.lower():
+							self.afa_feature()
+			# ... or ask for input
+			else:
+				print
+				user = raw_input(CL_TXT + 'Use AfA feature [' + CL_DEF + 'no' + CL_TXT + '] ? ' + CL_E)
+				# no or nothing? beginn from the very beginning
+				if user == 'n' or user == 'no' or not user:
+					print
+					self.date()
+				else:
+					self.afa_feature()
+
 		# start from the beginning
 		print
 		self.date()
 
+
+	def afa_feature(self):
+		# convert transaction to ledger_transaction
+		trans = ledgerparse.string_to_ledger(self.final_str)[0]
+
+		# make one afa reduction for every posted account with amount > 0
+		all_afas = []
+		for acc in trans.accounts:
+			if acc.amount.amount > 0:
+				print
+				print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
+				print CL_TXT + 'Account: ' + CL_ACC + acc.name + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
+				print CL_TXT + 'What is it? (Enter number or string for manual input.)' + CL_E
+				for num, item in enumerate(afa_table):
+					print CL_TXT + '(' + CL_DEF + str(num+1) + CL_TXT + ') ' + item + CL_DIM + ' (' + str(afa_table[item][0]) + ')' + CL_E
+
+				# let the user chose the afa item
+				correct = False
+				while not correct:
+					user = raw_input(CL_TXT + afa_def_account + ':' + CL_E)
+					end(user)
+					if user:
+						try:
+							if afa_table.keys()[int(user)-1] in afa_table:
+								afa_item = afa_table.keys()[int(user)-1]
+								afa_item_years = afa_table[afa_item][0]
+								afa_item_name = afa_table[afa_item][1]
+								correct = True
+						except Exception:
+							try:
+								afa_item_name = afa_def_account + ':' + user
+								afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
+								end(user)
+								if not afa_item_years:
+									afa_item_years = 1
+								else:
+									afa_item_years = int(afa_item_years)
+								correct = True
+							except Exception:
+								print CL_INF + 'Chose correct entry or enter string.' + CL_E
+
+				# generate a single afa transaction, while it's bellow the afa_threshold
+				if acc.amount.amount < afa_threshold_amount * 10000:
+					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name) )
+				# generate transactions over X year, where X = afa_item_years
+				else:
+					day_amount = ledgerparse.Money( real_amount=int( str( acc.amount.amount / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
+					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name, day_amount) )
+
+				# append the transactions to the journal(s)
+
+				# only append to a single journal when split_journal_into_years == False
+				if not split_journal_into_years:
+					# generate append string
+					appender = '\n\n' + '\n\n'.join([x[1] for x in all_afas])
+
+					# append to the file
+					f = open(ledger_file, 'a')
+					f.write( appender )
+					f.close()
+
+				# cycle through the years and append to the journals (or create a new journal for this year)
+				elif split_journal_into_years:
+					for years in all_afas:
+						# generate filename
+						tmp_file = journal_file(year=years[0])
+
+						# check if file exists
+						if os.path.isfile(tmp_file):
+
+							# get file contents length and let append be either \n\n on file or direct the first entry in this file
+							f = open(tmp_file, 'r')
+							appender_pre = '\n\n' if len(f.read()) > 0 else ''
+							f.close()
+
+							# append to file
+							f = open(tmp_file, 'a')
+							f.write( appender_pre + years[1] )
+
+						# file does not exist so create totally new
+						else:
+							f = open(tmp_file, 'w')
+							f.write( years[1] )
+							f.close()
+
+		print
+		self.date()
+
+	def afa_generate_trans(self, trans, account_expense, account_afa, day_amount=None):
+		# outputs an array with tupll like this:
+		# [ (YEAR: integer, TRANSACTION: string), ... ]
+
+		# get basic general values
+		tmp_code = '(' + trans.code + ') ' if trans.code else ''
+		tmp_comment = '\n ;' + '\n ;'.join(trans.comments) if len(trans.comments) > 0 else ''
+		tmp_acc_comment = '\n ;' + '\n ;'.join(account_expense.comments) if len(account_expense.comments) > 0 else ''
+
+		# starting year (an expense can only be used the next day it was bought)
+		starting_date = (trans.date + datetime.timedelta(days=1))
+
+		# make a single transaction
+		if day_amount == None:
+			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(account_expense.amount) + '\n ' + account_expense.name) ]
+		# make one transactions per year, till the acc.amount is <= 0 - subtracted by day_amount per day
+		else:
+			output = []
+			starting_amount = ledgerparse.Money(real_amount=account_expense.amount.amount, dec_sep=dec_sep)
+			actual = starting_date
+
+			# subtract from starting_amount till it's 0
+			while starting_amount.amount > 0:
+
+				# add substraction amount for actual year
+				working = actual
+				amount = ledgerparse.Money(dec_sep=dec_sep)
+				while working.year == actual.year:
+					# day_amount is lower than the remaining starting_amount
+					if starting_amount.amount > day_amount.amount:
+						amount += day_amount
+						starting_amount -= day_amount
+						working = working + datetime.timedelta(days=1)
+					# the remaining starting_amount is below day_amount ... it has to be the last year so add the last cent to the amount
+					elif starting_amount.amount < day_amount.amount:
+						amount += starting_amount
+						starting_amount.amount = 0
+					if starting_amount.amount <= 0:
+						working = working + datetime.timedelta(days=365)
+
+
+				# generate transaction for this year
+				output.append( (actual.year, datetime.datetime(actual.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(amount) + '\n ' + account_expense.name) )
+
+				# go to next year
+				actual = datetime.datetime(working.year,1,1)
+
+			# return output for multiple years
+			return output
 
 
 

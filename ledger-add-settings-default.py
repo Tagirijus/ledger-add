@@ -40,10 +40,41 @@ dec_sep = ',' # decimal seperator
 info_text	 =  'Infotext line 1\n'
 info_text	 += 'Infotext line 2\n'
 
-# date stuff
+# date and file stuff
 
+split_journal_into_years = True
+default_filename = 'ledger_{YEAR}.journal'
+default_ledger_path = '/home/USER/ledger'
 date_sep	= '-'			# only use '/' or '-'
 date_format	= '%Y' + date_sep + '%m' + date_sep + '%d'	# don't change this !
+
+##
+# afa feature
+
+# if afa_accounts array is empty, the afa feature will ask for evey account if it's afa. you can disable the afa_feature by adding 'disabled' to the array (it will ignore cases)
+afa_accounts	= ['disabled']
+
+# german threshold. above this the expense can only reduce tax for X years (according to the afa table). the value is meant to be 410 taxfree and 487,9 with 19% taxes
+afa_threshold_amount		= 487.9
+
+# default afa account
+afa_def_account = 'afa'
+
+# some entries from german afa table for reducing tax over X years
+# it is used like this:  afa_table[ WHAT_THING ] = (YEARS, ACCOUNT_STRING)
+afa_table		= {
+	'Mikrofon': (5, afa_def_account + ':Equipment'),
+	'Mikrofon (kabellos)': (3, afa_def_account + ':Equipment'),
+	'Computer': (3, afa_def_account + ':Computer'),
+	'Software': (3, afa_def_account + ':Software'),
+	'Werbungskosten': (1, afa_def_account + ':Werbungskosten'),
+	'Fahrtkosten': (1, afa_def_account + ':Fahrtkosten'),
+	'Telefonie': (1, afa_def_account + ':Telefonie'),
+	'Miete': (1, afa_def_account + ':Miete')
+	}
+
+# afa feature
+##
 
 # color stuff
 
@@ -55,7 +86,6 @@ BLUE = '\033[94m'
 GREEN = '\033[92m'
 YELLOW = '\033[93m'
 RED = '\033[91m'
-MAGENTA = '\033[95m'
 CYAN = '\033[96m'
 BOLD = '\033[1m'
 DIM = '\033[2m'
@@ -72,6 +102,8 @@ CL_INF = BOLD + RED if colorize else ''
 CL_DEF = YELLOW if colorize else ''
 # dimmed output
 CL_DIM = GREY if colorize else ''
+# account or transaction for afa
+CL_ACC = CYAN if colorize else ''
 # final output
 CL_OUT = BOLD + YELLOW if colorize else ''
 
