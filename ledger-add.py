@@ -869,7 +869,6 @@ class ledgerer_class(object):
 							try:
 								# user enters string
 								afa_item_name = alias_it( afa_def_account + ':' + user )
-								print 'DEBUG:', afa_item_name
 								afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
 								end(user)
 								if not afa_item_years:
