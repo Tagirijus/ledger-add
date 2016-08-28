@@ -883,41 +883,41 @@ class ledgerer_class(object):
 					day_amount = ledgerparse.Money( real_amount=int( str( acc.amount.amount / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
 					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name, day_amount) )
 
-				# append the transactions to the journal(s)
+		# append the transactions to the journal(s)
 
-				# only append to a single journal when split_journal_into_years == False
-				if not split_journal_into_years:
-					# generate append string
-					appender = '\n\n' + '\n\n'.join([x[1] for x in all_afas])
+		# only append to a single journal when split_journal_into_years == False
+		if not split_journal_into_years:
+			# generate append string
+			appender = '\n\n' + '\n\n'.join([x[1] for x in all_afas])
 
-					# append to the file
-					f = open(ledger_file, 'a')
-					f.write( appender )
+			# append to the file
+			f = open(ledger_file, 'a')
+			f.write( appender )
+			f.close()
+
+		# cycle through the years and append to the journals (or create a new journal for this year)
+		elif split_journal_into_years:
+			for years in all_afas:
+				# generate filename
+				tmp_file = journal_file(year=years[0])
+
+				# check if file exists
+				if os.path.isfile(tmp_file):
+
+					# get file contents length and let append be either \n\n on file or direct the first entry in this file
+					f = open(tmp_file, 'r')
+					appender_pre = '\n\n' if len(f.read()) > 0 else ''
 					f.close()
 
-				# cycle through the years and append to the journals (or create a new journal for this year)
-				elif split_journal_into_years:
-					for years in all_afas:
-						# generate filename
-						tmp_file = journal_file(year=years[0])
+					# append to file
+					f = open(tmp_file, 'a')
+					f.write( appender_pre + years[1] )
 
-						# check if file exists
-						if os.path.isfile(tmp_file):
-
-							# get file contents length and let append be either \n\n on file or direct the first entry in this file
-							f = open(tmp_file, 'r')
-							appender_pre = '\n\n' if len(f.read()) > 0 else ''
-							f.close()
-
-							# append to file
-							f = open(tmp_file, 'a')
-							f.write( appender_pre + years[1] )
-
-						# file does not exist so create totally new
-						else:
-							f = open(tmp_file, 'w')
-							f.write( years[1] )
-							f.close()
+				# file does not exist so create totally new
+				else:
+					f = open(tmp_file, 'w')
+					f.write( years[1] )
+					f.close()
 
 		print
 		self.date()
