@@ -843,9 +843,11 @@ class ledgerer_class(object):
 		all_afas = []
 		for acc in trans.accounts:
 			if acc.amount.amount > 0:
+				# get its comment for output
+				tmp_acc_com = ' (' + ', '.join([x.strip() for x in acc.comments]) + ')'
 				print
 				print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
-				print CL_TXT + 'Account: ' + CL_ACC + acc.name + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
+				print CL_TXT + 'Account: ' + CL_ACC + acc.name + CL_DIM + tmp_acc_com + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
 				print CL_TXT + 'What is it? (Enter number or string for manual input.)' + CL_E
 				for num, item in enumerate(afa_table):
 					print CL_TXT + '(' + CL_DEF + str(num+1) + CL_TXT + ') ' + item + CL_DIM + ' (' + str(afa_table[item][0]) + ')' + CL_E
@@ -864,7 +866,7 @@ class ledgerer_class(object):
 								correct = True
 						except Exception:
 							try:
-								afa_item_name = afa_def_account + ':' + user
+								afa_item_name = afa_def_account + ':' + alias_it(user)
 								afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
 								end(user)
 								if not afa_item_years:
@@ -936,7 +938,7 @@ class ledgerer_class(object):
 
 		# make a single transaction
 		if day_amount == None:
-			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(account_expense.amount) + '\n ' + account_expense.name) ]
+			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(account_expense.amount) + '\n ' + account_expense.name + tmp_acc_comment) ]
 		# make one transactions per year, till the acc.amount is <= 0 - subtracted by day_amount per day
 		else:
 			output = []
@@ -964,7 +966,7 @@ class ledgerer_class(object):
 
 
 				# generate transaction for this year
-				output.append( (actual.year, datetime.datetime(actual.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(amount) + '\n ' + account_expense.name) )
+				output.append( (actual.year, datetime.datetime(actual.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(amount) + '\n ' + account_expense.name + tmp_acc_comment) )
 
 				# go to next year
 				actual = datetime.datetime(working.year,1,1)
