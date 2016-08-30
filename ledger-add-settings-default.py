@@ -34,6 +34,7 @@ default_commodity = '€'
 ask_commodity = False
 ask_account_comment = False
 dec_sep = ',' # decimal seperator
+preset_wildcard = '[*]' # use this string in a preset, so that you will be ask to enter only this position later, when chosing the preset
 
 # info_text and color variables - and boolean for switching between color modes
 

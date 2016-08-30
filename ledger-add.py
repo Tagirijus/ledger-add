@@ -92,6 +92,7 @@ default_commodity = config('default_commodity')
 ask_commodity = config('ask_commodity')
 ask_account_comment = config('ask_account_comment')
 dec_sep = config('dec_sep')
+preset_wildcard = config('preset_wildcard')
 
 info_text =  config('info_text')
 
@@ -188,6 +189,7 @@ def validate_date(d):
 
 class ledgerer_class(object):
 	def __init__(self, the_file):
+		self.final_str = ''
 		if not os.path.isfile(the_file):
 			# exits the programm, if the given environment variable or argument is not a file
 			print CL_INF + 'Given argument is not a file.' + CL_E
@@ -198,71 +200,73 @@ class ledgerer_class(object):
 		the_journal = f.read()
 		f.close()
 		self.Journal = ledgerparse.string_to_ledger(the_journal)
+		# except Exception, e:
+		# 	print CL_INF + 'Journal file has a wrong ledger format.' + CL_E
+		# 	raise e
+		# 	exit()
 
 
-	def preset(self, what):
-		# load preset file, if possible, create empty array otherwise
-		if os.path.isfile(path_to_project + '/ledger-add.presets'):
-			# load file into variable
-			preset_file = open(path_to_project + '/ledger-add.presets', 'r')
-			self.preset_file_raw = preset_file.readlines()
-			self.preset_content = []
-			for x in self.preset_file_raw:
-				self.preset_content.append(x.rstrip().split('´'))
-			preset_file.close()
+	def preset(self, what='', liste=False):
+		# try to load the preset file
+		if not os.path.isfile(path_to_project + '/ledger-add.presets'):
+			presetjournal = []
 		else:
-			preset_file = open(path_to_project + '/ledger-add.presets', 'w')
-			preset_file.write('')
-			preset_file.close()
-			self.preset_content = []
+			f = open(path_to_project + '/ledger-add.presets', 'r')
+			presetjournal = ledgerparse.string_to_ledger( f.read() )
+			f.close()
 
-		# check if its preset chosing
-		if what[0:2] == 'p ':
+		# return the list, if liste == True
+		if liste == True:
+			return presetjournal
 
-			# get preset name
-			preset_name = what[2:]
+		# add the transaction with the presetname to the final_str
+		the_sum = 0.0
+		for t in presetjournal:
 
-			# chose preset, or return not-found message + False
-			which = -1
-			for y, x in enumerate(self.preset_content):
-				if x[0] == preset_name:
-					which = y
-			if which < 0:
-				print CL_INF + 'Preset not found.' + CL_E
-				return False
+			# use transaction as preset, if name matches - replace stuff as well
+			if '[' + what + ']' in t.payee:
 
-			# get its values from found preset
-			# get name, comment and commodity
-			self.str_name = self.preset_content[which][1]
-			if '[*]' in self.str_name:
-				# ask user for input for [*]
-				print CL_TXT + 'Preset transaction name: ' + CL_DEF + self.str_name + CL_E
-				user = raw_input(CL_TXT + 'Replace ' + CL_DEF + '[*]' + CL_TXT + ' with: ' + CL_E)
-				self.str_name = self.str_name.replace('[*]', user)
-			self.str_transaction_comment = self.preset_content[which][2]
-			self.str_commodity = self.preset_content[which][3]
+				# get sum and commodity
+				for acc in t.accounts:
+					try:
+						the_sum += float( str(acc.amount).replace(',', '.') )
+					except Exception:
+						pass
+					self.str_commodity = acc.commodity
 
-			# get accounts and accounts_amonut array
-			self.str_accounts = []
-			self.str_accounts_amount = []
-			self.str_accounts_comment = []
-			c = 1
-			for x in xrange(4, len(self.preset_content[which]) ):
-				if c == 1:
-					self.str_accounts.append(self.preset_content[which][x])
-					c += 1
-				elif c == 2:
-					self.str_accounts_amount.append(self.preset_content[which][x])
-					c -= 1
-			return True
+				# get string and replace preset-name
+				self.final_str = t.get_original().replace('[' + what + ']', '')
 
-		# or list / print out the presets
-		elif what == 'list':
-			print CL_TXT + 'Presets: ' + CL_DEF + ', '.join(str(x[0]) for x in self.preset_content) + CL_E
-			return False
+				# replace date
+				self.final_str = self.final_str.replace('9999-12-31', self.str_date)
 
-		# otherwise return False
-		return False
+				# replace preset_wildcards
+				while preset_wildcard in self.final_str:
+					print
+					print CL_DEF + self.final_str + CL_E
+					user = raw_input(CL_TXT + 'Replace first / last ' + CL_DEF + preset_wildcard + CL_TXT + ': ' + CL_E)
+					self.final_str = self.final_str.replace(preset_wildcard, user, 1)
+
+		# add the transaction to the journal
+		print
+		print CL_TXT + '- - - - -' + CL_E
+		print CL_OUT + self.final_str + CL_E
+		print CL_TXT + '- - - - -' + CL_E
+		print CL_DIM + 'Sum of values: ' + str(the_sum).replace('.', ',') + ' ' + self.str_commodity + CL_E
+		print
+
+		# ask if output should be appended
+		user = raw_input(CL_TXT + 'Add this entry? (yes=appends to file, p=saves as a preset) [' + CL_DEF + 'yes' + CL_TXT + ']: ' + CL_E)
+		# go back
+		if user == '<':
+			self.name()
+		if user == 'n' or user == 'no':
+			self.date()
+		elif user == 'p' or user == 'preset':
+			self.save_or_delete_preset()
+		else:
+			end(user)
+			self.append_file()
 
 
 	def use_code(self, user_code):
@@ -394,7 +398,15 @@ class ledgerer_class(object):
 
 	def name(self):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
-		preset = self.preset('list')
+
+		# get and print the presets
+		presets = self.preset(liste=True)
+		preset = False
+		preset_names = []
+		for t in presets:
+			if t.payee.find('['):
+				preset_names.append( t.payee[t.payee.rfind('[')+1:-1] )
+		print CL_DIM + 'Available presets: ' + CL_DEF + ', '.join(preset_names) + CL_E
 		print CL_DIM + '"p PRESETNAME" = chose preset. "d PRESETNAME" = delete preset.' + CL_E
 		user = raw_input(CL_TXT + 'Name or preset [' + CL_DEF + default_transaction_name + CL_TXT + ']: ' + CL_E)
 		end(user)
@@ -405,10 +417,10 @@ class ledgerer_class(object):
 		if len(user) > 2:
 			if user[0:2] == 'p ':
 				# input correct?
-				preset = self.preset(user)
+				preset = self.preset(user[2:])
 			elif user[0:2] == 'd ':
 				# delete a preset
-				self.save_preset(delete=user[2:])
+				self.save_or_delete_preset(delete=user[2:])
 		if not user:
 			user = default_transaction_name
 
@@ -657,7 +669,7 @@ class ledgerer_class(object):
 		for x in self.str_accounts_amount:
 			try:
 				the_sum += float( x.replace(',', '.') )
-			except Exception, e:
+			except Exception:
 				pass
 		print CL_OUT + self.final_str + CL_E
 		print CL_TXT + '- - - - -' + CL_E
@@ -672,13 +684,17 @@ class ledgerer_class(object):
 		if user == 'n' or user == 'no':
 			self.date()
 		elif user == 'p' or user == 'preset':
-			self.save_preset()
+			self.save_or_delete_preset()
 		else:
 			end(user)
 			self.append_file()
 
 
-	def save_preset(self, delete=''):
+	def save_or_delete_preset(self, delete=''):
+		# get the presetlist
+		presetlist = self.preset(liste=True)
+
+		# save a preset
 		if not delete:
 			# get the preset name
 			user = raw_input(CL_TXT + 'Preset name [' + CL_DEF + 'preset' + CL_TXT + ']: ' + CL_E)
@@ -687,71 +703,69 @@ class ledgerer_class(object):
 			else:
 				new_preset_name = user
 			end(user)
+
+			# check if it already exists
+			for t in presetlist:
+
+				# it already exists, cancel
+				if new_preset_name in t.payee:
+					print CL_INF + 'Preset already exists. Delete it first.' + CL_E
+					self.date()
+
+			# modify self.final_str to match preset format
+			# replace date with max date as a placeholder later
+			self.final_str = self.final_str.replace(self.str_date, '9999-12-31')
+			# add [PRESETNAME] on the end of the first line
+			tmp_final_str = []
+			for numline, line in enumerate(self.final_str.splitlines()):
+				if numline == 0:
+					tmp_final_str.append( line + '[' + new_preset_name + ']' )
+				else:
+					tmp_final_str.append( line )
+			self.final_str = '\n'.join( tmp_final_str )
+
+			# append it to the file (or create a new file)
+			if os.path.isfile(path_to_project + '/ledger-add.presets'):
+				print CL_TXT + 'Appending to preset file ...' + CL_E
+
+				# check if file is empty or not
+				f = open(path_to_project + '/ledger-add.presets', 'r')
+				newlines = '\n\n' if len(f.read()) > 0 else ''
+				f.close()
+
+				# write stuff
+				f = open(path_to_project + '/ledger-add.presets', 'a')
+				f.write(newlines + self.final_str)
+				f.close()
+				self.date()
+
+			# create a new file
+			else:
+				print CL_TXT + 'Creating new preset file ...' + CL_E
+				f = open(path_to_project + '/ledger-add.presets', 'w')
+				f.write(self.final_str)
+				f.close()
+				self.date()
+
+		# delete a preset
 		else:
-			# get the preset name to delete
-			new_preset_name = delete
+			new_presets = []
+			for t in presetlist:
+				# delete it
+				if '[' + delete + ']' in t.payee:
+					# delete the preset
+					cancel = raw_input(CL_INF + 'Really delete the preset [' + CL_DEF + 'no' + CL_INF + ']? ' + CL_E)
+					if not cancel or cancel == 'n' or cancel == 'no':
+						print CL_TXT + 'Canceling ...' + CL_E
+						new_presets.append( t )
+				# append the rest
+				else:
+					new_presets.append( t )
 
-		# get the lines of the file
-		self.preset('')
-
-		# check if the new preset name is already in the file
-		which = -1
-		for y, x in enumerate(self.preset_content):
-			if x[0] == new_preset_name:
-				which = y
-
-		# override existing preset or cancel
-		if not which < 0 and not delete:
-			cancel = raw_input(CL_TXT + 'Override existing preset [' + CL_DEF + 'no' + CL_TXT + ']? ' + CL_E)
-			if not cancel:
-				print CL_TXT + 'Canceling ...' + CL_E
-				self.date()
-
-			# no cancelling, override data for chosen preset
-			self.preset_file_raw[which] = new_preset_name
-			self.preset_file_raw[which] += '´' + self.str_name
-			self.preset_file_raw[which] += '´' + self.str_transaction_comment
-			self.preset_file_raw[which] += '´' + self.str_commodity
-			for x in xrange( 0, len(self.str_accounts) ):
-				self.preset_file_raw[which] += '´' + self.str_accounts[x]
-				self.preset_file_raw[which] += '´' + self.str_accounts_amount[x]
-
-		elif delete and which > -1:
-			# delete the preset
-			cancel = raw_input(CL_TXT + 'Really delete the preset [' + CL_DEF + 'no' + CL_TXT + ']? ' + CL_E)
-			if not cancel:
-				print CL_TXT + 'Canceling ...' + CL_E
-				self.date()
-
-			# no cancelling, delete the preset
-			self.preset_file_raw.pop(which)
-
-		elif delete and which < 0:
-			# delete preset not founCL_TXT + d + CL_E
-			print CL_INF + 'Preset not found.' + CL_E
-			self.date()
-
-		elif not delete:
-			# generate new data for new preset
-			tmp = new_preset_name
-			tmp += '´' + self.str_name
-			tmp += '´' + self.str_transaction_comment
-			tmp += '´' + self.str_commodity
-			for x in xrange( 0, len(self.str_accounts) ):
-				tmp += '´' + self.str_accounts[x]
-				tmp += '´' + self.str_accounts_amount[x]
-			self.preset_file_raw.append(tmp)
-
-		# generate final output string
-		final_output = ''
-		for x in self.preset_file_raw:
-			final_output += x.rstrip() + '\n'
-
-		# override file
-		preset_file = open(path_to_project + '/ledger-add.presets', 'w')
-		preset_file.write(final_output)
-		preset_file.close()
-		print CL_TXT + 'Saved to preset file.' + CL_E
+			# save the new file (or the same)
+			f = open(path_to_project + '/ledger-add.presets', 'w')
+			f.write( '\n\n'.join( [str(x) for x in new_presets] ) )
+			f.close()
 
 		# start from beginning
 		self.date()
@@ -827,6 +841,7 @@ class ledgerer_class(object):
 			else:
 				print
 				user = raw_input(CL_TXT + 'Use AfA feature [' + CL_DEF + 'no' + CL_TXT + '] ? ' + CL_E)
+				end(user)
 				# no or nothing? beginn from the very beginning
 				if user == 'n' or user == 'no' or not user:
 					print
