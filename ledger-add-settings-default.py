@@ -57,8 +57,9 @@ afa_accounts	= ['disabled']
 # german threshold. above this the expense can only reduce tax for X years (according to the afa table). the value is meant to be 410 taxfree and 487,9 with 19% taxes
 afa_threshold_amount		= 487.9
 
-# default afa account
+# afa account
 afa_def_account = 'afa'
+afa_append_comment = False
 
 # some entries from german afa table for reducing tax over X years
 # it is used like this:  afa_table[ WHAT_THING ] = (YEARS, ACCOUNT_STRING)

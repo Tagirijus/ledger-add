@@ -104,6 +104,7 @@ afa_accounts = config('afa_accounts')
 afa_threshold_amount = config('afa_threshold_amount')
 afa_table = config('afa_table')
 afa_def_account = config('afa_def_account')
+afa_append_comment = config('afa_append_comment')
 
 colorize = config('colorize')
 
@@ -133,9 +134,11 @@ arguments = sys.argv
 # no arguments? check environment variable
 if len(arguments) < 2:
 	ledger_file = journal_file()
+	file_automatic = True
 else:
 	# using the argument as the file
 	ledger_file = arguments[1]
+	file_automatic = False
 
 # check if it exists and if it's no directory / if it's a real file
 if os.path.exists(ledger_file):
@@ -242,6 +245,7 @@ class ledgerer_class(object):
 			# get accounts and accounts_amonut array
 			self.str_accounts = []
 			self.str_accounts_amount = []
+			self.str_accounts_comment = []
 			c = 1
 			for x in xrange(4, len(self.preset_content[which]) ):
 				if c == 1:
@@ -890,7 +894,7 @@ class ledgerer_class(object):
 		# append the transactions to the journal(s)
 
 		# only append to a single journal when split_journal_into_years == False
-		if not split_journal_into_years:
+		if not split_journal_into_years or not file_automatic:
 			# generate append string
 			appender = '\n\n' + '\n\n'.join([x[1] for x in all_afas])
 
@@ -900,7 +904,7 @@ class ledgerer_class(object):
 			f.close()
 
 		# cycle through the years and append to the journals (or create a new journal for this year)
-		elif split_journal_into_years:
+		else:
 			for years in all_afas:
 				# generate filename
 				tmp_file = journal_file(year=years[0])
@@ -933,8 +937,15 @@ class ledgerer_class(object):
 
 		# get basic general values
 		tmp_code = '(' + trans.code + ') ' if trans.code else ''
+
+
+		# append comment of expense account to afa account as well, if enabled
+		# (by ONLY append it to the transaction)
 		tmp_comment = '\n ;' + '\n ;'.join(trans.comments) if len(trans.comments) > 0 else ''
 		tmp_acc_comment = '\n ;' + '\n ;'.join(account_expense.comments) if len(account_expense.comments) > 0 else ''
+		if afa_append_comment:
+			tmp_comment += tmp_acc_comment
+			tmp_acc_comment = ''
 
 		# starting year (an expense can only be used the next day it was bought)
 		starting_date = (trans.date + datetime.timedelta(days=1))
