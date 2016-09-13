@@ -1073,10 +1073,6 @@ class ledgerer_class(object):
 				working = actual
 				amount = ledgerparse.Money(dec_sep=dec_sep)
 				while working.year == actual.year:
-					# print 'Working year:', working.year
-					# print 'Actual year:', actual.year
-					# print 'Starting amount:', starting_amount
-					# print 'Day amoun:', day_amount
 					# day_amount is lower than the remaining starting_amount
 					if starting_amount.amount > day_amount.amount:
 						amount += day_amount
