@@ -57,22 +57,24 @@ afa_accounts	= ['disabled']
 
 # german threshold. above this the expense can only reduce tax for X years (according to the afa table). the value is meant to be 410 taxfree and 487,9 with 19% taxes
 afa_threshold_amount		= 487.9
+afa_per_day_or_month		= 'month' # month | day
 
 # afa account
 afa_def_account = 'afa'
+afanon_def_account = 'afanon'
 afa_append_comment = False
 
 # some entries from german afa table for reducing tax over X years
 # it is used like this:  afa_table[ WHAT_THING ] = (YEARS, ACCOUNT_STRING)
 afa_table		= {
-	'Mikrofon': (5, afa_def_account + ':Equipment'),
-	'Mikrofon (kabellos)': (3, afa_def_account + ':Equipment'),
-	'Computer': (3, afa_def_account + ':Computer'),
-	'Software': (3, afa_def_account + ':Software'),
-	'Werbungskosten': (1, afa_def_account + ':Werbungskosten'),
-	'Fahrtkosten': (1, afa_def_account + ':Fahrtkosten'),
-	'Telefonie': (1, afa_def_account + ':Telefonie'),
-	'Miete': (1, afa_def_account + ':Miete')
+	'Mikrofon': (5, '[ACCOUNT]:Equipment'),
+	'Mikrofon (kabellos)': (3, '[ACCOUNT]:Equipment'),
+	'Computer': (3, '[ACCOUNT]:Computer'),
+	'Software': (3, '[ACCOUNT]:Software'),
+	'Werbungskosten': (1, '[ACCOUNT]:Werbungskosten'),
+	'Fahrtkosten': (1, '[ACCOUNT]:Fahrtkosten'),
+	'Telefonie': (1, '[ACCOUNT]:Telefonie'),
+	'Miete': (1, '[ACCOUNT]:Miete')
 	}
 
 # afa feature

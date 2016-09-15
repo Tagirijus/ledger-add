@@ -103,8 +103,10 @@ date_format = config('date_format')
 
 afa_accounts = config('afa_accounts')
 afa_threshold_amount = config('afa_threshold_amount')
+afa_per_day_or_month = config('afa_per_day_or_month')
 afa_table = config('afa_table')
 afa_def_account = config('afa_def_account')
+afanon_def_account = config('afanon_def_account')
 afa_append_comment = config('afa_append_comment')
 
 colorize = config('colorize')
@@ -158,6 +160,23 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 
 # functions and classes
+
+def get_real_amount_with_percentage(original_amount, percentage):
+	# rounds the last two digits of the real_amount of the Money class
+	new = int( original_amount * percentage )
+	if int( str(new)[-2:]) >= 50:
+		new += 100
+	return int( str(new)[:-2] + '00' )
+
+def add_month(dateobj):
+	# returns how much months are left, including actual given month
+	new_month = dateobj.month + 1
+	if new_month > 12:
+		new_year = dateobj.year + 1
+		new_month = 1
+	else:
+		new_year = dateobj.year
+	return datetime.datetime(new_year,new_month,dateobj.day)
 
 def alias_it(text):
 	out = []
@@ -959,6 +978,15 @@ class ledgerer_class(object):
 				print
 				print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
 				print CL_TXT + 'Account: ' + CL_ACC + acc.name + CL_DIM + tmp_acc_com + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
+				# ask percentage of usage
+				user = raw_input(CL_TXT + 'Usage for the job [' + CL_DEF + '100' + CL_TXT + ']% ? ' + CL_E)
+				if not user:
+					user = '100'
+				try:
+					percentage = float(user) / 100
+				except Exception:
+					percentage = 1.0
+				# choose type of afa stuff
 				print CL_TXT + 'What is it? (Enter number or string for manual input.)' + CL_E
 				for num, item in enumerate(afa_table):
 					print CL_TXT + '(' + CL_DEF + str(num+1) + CL_TXT + ') ' + item + CL_DIM + ' (' + str(afa_table[item][0]) + ')' + CL_E
@@ -990,13 +1018,44 @@ class ledgerer_class(object):
 							except Exception:
 								print CL_INF + 'Chose correct entry or enter string.' + CL_E
 
+
+				# NONAFA here !!
+				# generate the nonafa transaction, if percentage is < 1.0
+				# NONAFA here !!
+
+				if percentage < 1.0:
+					# get code
+					tmp_nonafa_code = '(' + trans.code + ') ' if trans.code else ''
+
+					# get comment
+					tmp_nonafa_comment = '\n ;' + '\n ;'.join(trans.comments) if len(trans.comments) > 0 else ''
+					tmp_nonafa_acc_comment = '\n ;' + '\n ;'.join(acc.comments) if len(acc.comments) > 0 else ''
+					if afa_append_comment:
+						tmp_nonafa_comment += tmp_nonafa_acc_comment
+						tmp_nonafa_acc_comment = ''
+
+					# make account
+					tmp_nonafa_account = afa_item_name.replace('[ACCOUNT]', afanon_def_account)
+
+					# get amount
+					tmp_real_amount = get_real_amount_with_percentage(acc.amount.amount, 1.0 - percentage)
+
+					# generate nonafa transaction
+					tmp_nonafa = datetime.datetime(trans.date.year, 12, 31).strftime(date_format) + ' * ' + tmp_nonafa_code + trans.payee + tmp_nonafa_comment + '\n ' + tmp_nonafa_account + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + acc.name + tmp_nonafa_acc_comment
+
+					# append it
+					all_afas.append( (trans.date.year, tmp_nonafa) )
+
 				# generate a single afa transaction, while it's bellow the afa_threshold
 				if acc.amount.amount < afa_threshold_amount * 10000:
-					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name) )
+					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name, percentage=percentage) )
 				# generate transactions over X year, where X = afa_item_years
 				else:
-					day_amount = ledgerparse.Money( real_amount=int( str( acc.amount.amount / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
-					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name, day_amount) )
+					if afa_per_day_or_month == 'day':
+						per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
+					else:
+						per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (12 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
+					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), per_amount, percentage) )
 
 		# append the transactions to the journal(s)
 
@@ -1038,8 +1097,8 @@ class ledgerer_class(object):
 		print
 		self.date()
 
-	def afa_generate_trans(self, trans, account_expense, account_afa, day_amount=None):
-		# outputs an array with tupll like this:
+	def afa_generate_trans(self, trans, account_expense, account_afa, per_amount=None, percentage=1.0):
+		# outputs an array with tuple like this:
 		# [ (YEAR: integer, TRANSACTION: string), ... ]
 
 		# get basic general values
@@ -1054,16 +1113,19 @@ class ledgerer_class(object):
 			tmp_comment += tmp_acc_comment
 			tmp_acc_comment = ''
 
+		# get amount
+		tmp_real_amount = get_real_amount_with_percentage(account_expense.amount.amount, percentage)
+
 		# starting year (an expense can only be used the next day it was bought)
 		starting_date = (trans.date + datetime.timedelta(days=1))
 
 		# make a single transaction
-		if day_amount == None:
-			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(account_expense.amount) + '\n ' + account_expense.name + tmp_acc_comment) ]
-		# make one transactions per year, till the acc.amount is <= 0 - subtracted by day_amount per day
+		if per_amount == None:
+			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + account_expense.name + tmp_acc_comment) ]
+		# make one transactions per year, till the acc.amount is <= 0 - subtracted by per_amount per day
 		else:
 			output = []
-			starting_amount = ledgerparse.Money(real_amount=account_expense.amount.amount, dec_sep=dec_sep)
+			starting_amount = ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)
 			actual = starting_date
 
 			# subtract from starting_amount till it's 0
@@ -1073,13 +1135,16 @@ class ledgerer_class(object):
 				working = actual
 				amount = ledgerparse.Money(dec_sep=dec_sep)
 				while working.year == actual.year:
-					# day_amount is lower than the remaining starting_amount
-					if starting_amount.amount > day_amount.amount:
-						amount += day_amount
-						starting_amount -= day_amount
-						working = working + datetime.timedelta(days=1)
-					# the remaining starting_amount is below day_amount ... it has to be the last year so add the last cent to the amount
-					elif starting_amount.amount <= day_amount.amount:
+					# per_amount is lower than the remaining starting_amount
+					if starting_amount.amount > per_amount.amount:
+						amount += per_amount
+						starting_amount -= per_amount
+						if afa_per_day_or_month == 'day':
+							working = working + datetime.timedelta(days=1)
+						else:
+							working = add_month(working)
+					# the remaining starting_amount is below per_amount ... it has to be the last year so add the last cent to the amount
+					elif starting_amount.amount <= per_amount.amount:
 						amount += starting_amount
 						starting_amount.amount = 0
 					if starting_amount.amount <= 0:
