@@ -613,8 +613,14 @@ class ledgerer_class(object):
 			elif user[0:2] == 'd ':
 				# delete a preset
 				self.save_or_delete_preset(delete=user[2:])
+		# check for afa command (to add afa transactions, while original already exists)
+		if len(user) > 3:
+			if user[0:3] == 'afa':
+				self.post_afa(user[3:])
+		# fill user with default, if nothing was input
 		if not user:
 			user = default_transaction_name
+
 
 		# cleared / pending feature ... only if enabled in configuration file (modify_ledger_file) ... it will find and clear the trans.
 		if user[0:2] == '* ' and modify_ledger_file:
@@ -965,9 +971,41 @@ class ledgerer_class(object):
 		self.date()
 
 
-	def afa_feature(self):
-		# convert transaction to ledger_transaction
-		trans = ledgerparse.string_to_ledger(self.final_str)[0]
+	def post_afa(self, code):
+		code = code.strip()
+		# get rid of possible braces
+		if '(' in code and ')' in code:
+			code = code[1:-1]
+
+		# search this code in the journal
+		trans_id = -1
+		for i, trans in enumerate(self.Journal):
+			if code == trans.code:
+				trans_id = i
+				break
+		if trans_id < 0:
+			print
+			print CL_INF + 'No existing transaction with this code was found. Enter another transaction name, please.' + CL_E
+			print
+			self.name()
+		original_trans = self.Journal[trans_id]
+
+		# use this transaction?
+		print
+		print CL_TXT + '- - - - -' + CL_E
+		print original_trans
+		print CL_TXT + '- - - - -' + CL_E
+		user = raw_input(CL_TXT + 'Use this transaction [' + CL_DEF + 'yes' + CL_TXT + '] ? ' + CL_E)
+		if not user or user == 'y' or user == 'yes':
+			self.afa_feature(original_trans)
+		else:
+			self.name()
+
+
+	def afa_feature(self, trans=None):
+		# convert transaction to ledger_transaction or take from argument
+		if not trans:
+			trans = ledgerparse.string_to_ledger(self.final_str)[0]
 
 		# make one afa reduction for every posted account with amount > 0
 		all_afas = []
@@ -1048,7 +1086,7 @@ class ledgerer_class(object):
 
 				# generate a single afa transaction, while it's bellow the afa_threshold
 				if acc.amount.amount < afa_threshold_amount * 10000:
-					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name, percentage=percentage) )
+					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), percentage=percentage) )
 				# generate transactions over X year, where X = afa_item_years
 				else:
 					if afa_per_day_or_month == 'day':
