@@ -161,12 +161,15 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 # functions and classes
 
-def get_real_amount_with_percentage(original_amount, percentage):
+def get_real_amount_with_percentage(original_amount, percentage, private=False):
 	# rounds the last two digits of the real_amount of the Money class
 	new = int( original_amount * percentage )
 	if int( str(new)[-2:]) >= 50:
 		new += 100
-	return int( str(new)[:-2] + '00' )
+	if private:
+		return original_amount - int( str(new)[:-2] + '00' )
+	else:
+		return int( str(new)[:-2] + '00' )
 
 def add_month(dateobj):
 	# returns how much months are left, including actual given month
@@ -1076,7 +1079,7 @@ class ledgerer_class(object):
 					tmp_nonafa_account = afa_item_name.replace('[ACCOUNT]', afanon_def_account)
 
 					# get amount
-					tmp_real_amount = get_real_amount_with_percentage(acc.amount.amount, 1.0 - percentage)
+					tmp_real_amount = get_real_amount_with_percentage(acc.amount.amount, percentage, True)
 
 					# generate nonafa transaction
 					tmp_nonafa = datetime.datetime(trans.date.year, 12, 31).strftime(date_format) + ' * ' + tmp_nonafa_code + trans.payee + tmp_nonafa_comment + '\n ' + tmp_nonafa_account + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + acc.name + tmp_nonafa_acc_comment
