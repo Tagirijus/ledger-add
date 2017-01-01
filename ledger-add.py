@@ -307,7 +307,7 @@ class ledgerer_class(object):
 			for t in presetlist:
 
 				# it already exists, cancel
-				if new_preset_name in t.payee:
+				if new_preset_name == t.payee:
 					print CL_INF + 'Preset already exists. Delete it first.' + CL_E
 					self.date()
 
