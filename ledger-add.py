@@ -1161,7 +1161,7 @@ class ledgerer_class(object):
 		starting_date = (trans.date + datetime.timedelta(days=1))
 
 		# make a single transaction
-		if per_amount == None:
+		if type(per_amount).__name__ != 'Money':
 			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + account_expense.name + tmp_acc_comment) ]
 		# make one transactions per year, till the acc.amount is <= 0 - subtracted by per_amount per day
 		else:
