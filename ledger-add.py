@@ -1081,8 +1081,8 @@ class ledgerer_class(object):
 					# get amount
 					tmp_real_amount = get_real_amount_with_percentage(acc.amount.amount, percentage, True)
 
-					# generate nonafa transaction
-					tmp_nonafa = datetime.datetime(trans.date.year, 12, 31).strftime(date_format) + ' * ' + tmp_nonafa_code + trans.payee + tmp_nonafa_comment + '\n ' + tmp_nonafa_account + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + acc.name + tmp_nonafa_acc_comment
+					# generate nonafa transaction (on the same day)
+					tmp_nonafa = trans.date.strftime(date_format) + ' * ' + tmp_nonafa_code + trans.payee + tmp_nonafa_comment + '\n ' + tmp_nonafa_account + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + acc.name + tmp_nonafa_acc_comment
 
 					# append it
 					all_afas.append( (trans.date.year, tmp_nonafa) )
@@ -1110,6 +1110,10 @@ class ledgerer_class(object):
 			f.write( appender )
 			f.close()
 
+			# sort the file, if modify_ledger_file is True
+			if modify_ledger_file:
+				self.sort_journal(ledger_file)
+
 		# cycle through the years and append to the journals (or create a new journal for this year)
 		else:
 			for years in all_afas:
@@ -1129,11 +1133,19 @@ class ledgerer_class(object):
 					f.write( appender_pre + years[1] )
 					f.close()
 
+					# sort the file, if modify_ledger_file is True
+					if modify_ledger_file:
+						self.sort_journal(ledger_file)
+
 				# file does not exist so create totally new
 				else:
 					f = open(tmp_file, 'w')
 					f.write( years[1] )
 					f.close()
+
+					# sort the file, if modify_ledger_file is True
+					if modify_ledger_file:
+						self.sort_journal(ledger_file)
 
 		print
 		self.date()
