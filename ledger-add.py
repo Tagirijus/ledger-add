@@ -210,22 +210,25 @@ def validate_date(d):
 
 
 class ledgerer_class(object):
-	def __init__(self, the_file):
+	def __init__(self, the_file, year):
 		if not os.path.isfile(the_file):
 			# exits the programm, if the given environment variable or argument is not a file
 			print CL_INF + 'Given argument is not a file.' + CL_E
 			exit()
 
+		# the chosen year (for automatic file loading)
+		self.year = year
+
 		# parse the transactions into self.Journal
-		f = open(the_file, 'r')
+		self.the_file = the_file
+		self.the_file_original = the_file
+		self.reload()
+
+	def reload(self):
+		f = open(self.the_file, 'r')
 		the_journal = f.read()
 		f.close()
 		self.Journal = ledgerparse.string_to_ledger(the_journal)
-		# except Exception, e:
-		# 	print CL_INF + 'Journal file has a wrong ledger format.' + CL_E
-		# 	raise e
-		# 	exit()
-
 
 	def preset_strip_options(self, text):
 		# Splits a payee string from preset format into original payee and options
@@ -589,11 +592,21 @@ class ledgerer_class(object):
 				end(user)
 				print CL_INF + 'Wrong input.' + CL_E
 		self.str_date = get_date(user).strftime(date_format)
+		self.trans_date = get_date(user)
 		self.name()
 
 
 	def name(self):
 		# gets the name of the transcation. this is a string, no big checks are needed e.g. regarding the format.
+
+		# change file_automatic and chose correct file regarding the entered year, or not
+		if split_journal_into_years and file_automatic:
+			# check if the year is different
+			if not self.trans_date.year == self.year:
+				self.the_file = journal_file(year=self.trans_date.year)
+				self.reload()
+				self.year = self.trans_date.year
+				print CL_INF + 'Changed to', self.the_file, 'for working.' + CL_E
 
 		# get and print the presets
 		presets = self.preset(liste=True)
@@ -628,7 +641,7 @@ class ledgerer_class(object):
 		# cleared / pending feature ... only if enabled in configuration file (modify_ledger_file) ... it will find and clear the trans.
 		if user[0:2] == '* ' and modify_ledger_file:
 			# getting the original data
-			f = open(ledger_file, 'r')
+			f = open(self.the_file, 'r')
 			original_raw = f.read()
 			original = original_raw.splitlines()
 			f.close()
@@ -670,10 +683,10 @@ class ledgerer_class(object):
 					end(user)
 
 					output = '\n'.join(original)
-					f = open(ledger_file, 'w')
+					f = open(self.the_file, 'w')
 					f.write( output )
 					f.close()
-					self.sort_journal(ledger_file)
+					self.sort_journal(self.the_file)
 					self.date()
 
 		# a simple code was input "(200)" so use this transactions values form an existing one
@@ -924,7 +937,7 @@ class ledgerer_class(object):
 		print CL_TXT + 'Adding entry ...' + CL_E
 
 		# getting the original data
-		f = open(ledger_file, 'r')
+		f = open(self.the_file, 'r')
 		original_raw = f.read()
 		original = original_raw.splitlines()
 		f.close()
@@ -932,20 +945,20 @@ class ledgerer_class(object):
 
 		# first check, if the file is empty: then just append / write new
 		if len(original) < 1:
-			f = open(ledger_file, 'w')
+			f = open(self.the_file, 'w')
 			f.write(self.final_str)
 			f.close()
 
 		# simple append to the given file
 		elif len(original) > 1:
 
-			f = open(ledger_file, 'a')
+			f = open(self.the_file, 'a')
 			f.write('\n\n' + self.final_str)
 			f.close()
 
 		# sort the file, if modify_ledger_file is True
 		if modify_ledger_file:
-			self.sort_journal(ledger_file)
+			self.sort_journal(self.the_file)
 
 		# check for afa feature
 		# if it is not disabled ...
@@ -1106,13 +1119,13 @@ class ledgerer_class(object):
 			appender = '\n\n' + '\n\n'.join([x[1] for x in all_afas])
 
 			# append to the file
-			f = open(ledger_file, 'a')
+			f = open(self.the_file, 'a')
 			f.write( appender )
 			f.close()
 
 			# sort the file, if modify_ledger_file is True
 			if modify_ledger_file:
-				self.sort_journal(ledger_file)
+				self.sort_journal(self.the_file)
 
 		# cycle through the years and append to the journals (or create a new journal for this year)
 		else:
@@ -1135,7 +1148,7 @@ class ledgerer_class(object):
 
 					# sort the file, if modify_ledger_file is True
 					if modify_ledger_file:
-						self.sort_journal(ledger_file)
+						self.sort_journal(self.the_file)
 
 				# file does not exist so create totally new
 				else:
@@ -1145,7 +1158,7 @@ class ledgerer_class(object):
 
 					# sort the file, if modify_ledger_file is True
 					if modify_ledger_file:
-						self.sort_journal(ledger_file)
+						self.sort_journal(self.the_file)
 
 		print
 		self.date()
@@ -1218,6 +1231,6 @@ class ledgerer_class(object):
 
 # starting program
 
-ledgerer = ledgerer_class(ledger_file)
+ledgerer = ledgerer_class(ledger_file, datetime.datetime.now().year)
 
 ledgerer.date()
