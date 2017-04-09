@@ -250,7 +250,7 @@ class ledgerer_class(object):
 
 	def preset_get_name_and_settings(self, text):
 		# Gets the settings from the preset payee, which is on the very end of the payee and inside the []. The format is actually:
-		# [NAME: str, KEEP_YEAR: bool, KEEP_MONTH: bool, KEEP_DAY: bool]
+		# [NAME: str, KEEP_YEAR: bool, KEEP_MONTH: bool, KEEP_DAY: bool, COMMENT: str]
 
 		# get name and options from payee text
 		text = self.preset_strip_options(text)[1]
@@ -260,11 +260,13 @@ class ledgerer_class(object):
 		for c, x in enumerate(text.split(',')):
 			if c == 0:
 				output.append(x)
-			else:
+			elif c > 0 and c <= 3:
 				try:
 					output.append( bool( int(x) ) )
 				except Exception:
 					output.append( False )
+			elif c == 4:
+				output.append(x)
 
 		# give it to me!
 		return output
@@ -288,23 +290,30 @@ class ledgerer_class(object):
 			# year
 			user = raw_input(CL_TXT + 'Keep YEAR [' + CL_DEF + 'no' + CL_TXT + ']: ' + CL_E)
 			if user == 'yes' or user == 'y':
-				keep_year = '1'
+				keep_year = ',1'
 			else:
-				keep_year = '0'
+				keep_year = ',0'
 
 			# month
 			user = raw_input(CL_TXT + 'Keep MONTH [' + CL_DEF + 'no' + CL_TXT + ']: ' + CL_E)
 			if user == 'yes' or user == 'y':
-				keep_month = '1'
+				keep_month = ',1'
 			else:
-				keep_month = '0'
+				keep_month = ',0'
 
 			# day
 			user = raw_input(CL_TXT + 'Keep DAY [' + CL_DEF + 'no' + CL_TXT + ']: ' + CL_E)
 			if user == 'yes' or user == 'y':
-				keep_day = '1'
+				keep_day = ',1'
 			else:
-				keep_day = '0'
+				keep_day = ',0'
+
+			# comment
+			user = raw_input(CL_TXT + 'Comment []: ' + CL_E)
+			if user:
+				comment = ',' + user
+			else:
+				comment = ''
 
 			# check if it already exists
 			for t in presetlist:
@@ -320,7 +329,7 @@ class ledgerer_class(object):
 			tmp_final_str = []
 			for numline, line in enumerate(self.final_str.splitlines()):
 				if numline == 0:
-					tmp_final_str.append( line + '[' + new_preset_name + ',' + keep_year + ',' + keep_month + ',' + keep_day + ']' )
+					tmp_final_str.append( line + '[' + new_preset_name + keep_year + keep_month + keep_day + comment + ']' )
 				else:
 					tmp_final_str.append( line )
 			self.final_str = '\n'.join( tmp_final_str )
@@ -392,7 +401,7 @@ class ledgerer_class(object):
 
 			# use transaction as preset, if name matches - replace stuff as well
 			options = self.preset_get_name_and_settings(t.payee)
-			if what in options:
+			if options[0] == what:
 
 				# get options from preset name
 				# name
@@ -410,6 +419,12 @@ class ledgerer_class(object):
 					pr_year = False
 					pr_month = False
 					pr_day = False
+
+				# comment
+				if len(options) > 4:
+					pr_comment = options[4]
+				else:
+					pr_comment = ''
 
 				# get sum and commodity
 				for acc in t.accounts:
@@ -453,6 +468,11 @@ class ledgerer_class(object):
 		print CL_TXT + '- - - - -' + CL_E
 		print CL_DIM + 'Sum of values: ' + str(the_sum).replace('.', ',') + ' ' + self.str_commodity + CL_E
 		print
+
+		# print comment of the preset
+		if len(pr_comment) > 0:
+			print CL_INF + pr_comment + CL_E
+			print
 
 		# ask if output should be appended
 		user = raw_input(CL_TXT + 'Add this entry? (yes=appends to file, p=saves as a preset) [' + CL_DEF + 'yes' + CL_TXT + ']: ' + CL_E)
@@ -614,7 +634,7 @@ class ledgerer_class(object):
 		preset_names = []
 		for t in presets:
 			preset_names.append( self.preset_get_name_and_settings(t.payee)[0] )
-		print CL_DIM + 'Available presets: ' + CL_DEF + ', '.join(preset_names) + CL_E
+		print CL_DIM + 'Available presets: ' + CL_DEF + ', '.join(sorted(preset_names)) + CL_E
 		print CL_DIM + '"p PRESETNAME" = chose preset. "d PRESETNAME" = delete preset.' + CL_E
 		user = raw_input(CL_TXT + 'Name or preset [' + CL_DEF + default_transaction_name + CL_TXT + ']: ' + CL_E)
 		end(user)
