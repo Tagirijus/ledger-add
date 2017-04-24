@@ -1043,93 +1043,89 @@ class ledgerer_class(object):
 		if not trans:
 			trans = ledgerparse.string_to_ledger(self.final_str)[0]
 
-		# make one afa reduction for every posted account with amount > 0
+		# list every posted account with amount > 0
+		# and ask which acc should be used for afa stuff
 		all_afas = []
-		for acc in trans.accounts:
-			if acc.amount.amount > 0:
-				# get its comment for output
-				tmp_acc_com = ' (' + ', '.join([x.strip() for x in acc.comments]) + ')' if len(acc.comments) > 0 else ''
-				print
-				print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
-				print CL_TXT + 'Account: ' + CL_ACC + acc.name + CL_DIM + tmp_acc_com + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
-				# ask percentage of usage
-				user = raw_input(CL_TXT + 'Usage for the job [' + CL_DEF + '100' + CL_TXT + ']% ? ' + CL_E)
-				if not user:
-					user = '100'
+		default = -1
+		print
+		print CL_TXT + 'Available accounts:' + CL_E
+		for num, acc_iter in enumerate(trans.accounts):
+			if acc_iter.amount.amount > 0:
+				if num == 0:
+					default = num
+				print CL_DEF + str(num) + CL_TXT + ': ' + acc_iter.name + CL_E
+		print
+		user = raw_input(CL_TXT + 'Choose account [' + CL_DEF + str(default) + CL_TXT + '] : ' + CL_E)
+		try:
+			if not user:
+				user = default
+			else:
+				user = int(user)
+			acc = trans.accounts[user]
+		except Exception:
+			print CL_INF + 'Account not found.' + CL_E
+			self.date()
+
+		# get its comment for output
+		tmp_acc_com = ' (' + ', '.join([x.strip() for x in acc.comments]) + ')' if len(acc.comments) > 0 else ''
+		print
+		print CL_TXT + 'Transaction: (' + CL_DEF + trans.code + CL_TXT + ') ' + CL_ACC + trans.payee + CL_E
+		print CL_TXT + 'Account: ' + CL_ACC + acc.name + CL_DIM + tmp_acc_com + ' ' + str(acc.amount) + ' ' + acc.commodity + CL_E
+
+		# ask percentage of usage
+		# user = raw_input(CL_TXT + 'Usage for the job [' + CL_DEF + '100' + CL_TXT + ']% ? ' + CL_E)
+		# if not user:
+		# 	user = '100'
+		# try:
+		# 	percentage = float(user) / 100
+		# except Exception:
+		# 	percentage = 1.0
+
+		# percentage asking is disabled ... ^^^
+		percentage = 1.0
+
+		# choose type of afa stuff
+		print CL_TXT + 'What is it? (Enter number or string for manual input.)' + CL_E
+		for num, item in enumerate(afa_table):
+			print CL_TXT + '(' + CL_DEF + str(num+1) + CL_TXT + ') ' + item + CL_DIM + ' (' + str(afa_table[item][0]) + ')' + CL_E
+
+		# let the user chose the afa item
+		correct = False
+		while not correct:
+			user = raw_input(CL_TXT + afa_def_account + ':' + CL_E)
+			end(user)
+			if user:
 				try:
-					percentage = float(user) / 100
+					# user enters number
+					if afa_table.keys()[int(user)-1] in afa_table:
+						afa_item = afa_table.keys()[int(user)-1]
+						afa_item_years = afa_table[afa_item][0]
+						afa_item_name = afa_table[afa_item][1]
+						correct = True
 				except Exception:
-					percentage = 1.0
-				# choose type of afa stuff
-				print CL_TXT + 'What is it? (Enter number or string for manual input.)' + CL_E
-				for num, item in enumerate(afa_table):
-					print CL_TXT + '(' + CL_DEF + str(num+1) + CL_TXT + ') ' + item + CL_DIM + ' (' + str(afa_table[item][0]) + ')' + CL_E
+					try:
+						# user enters string
+						afa_item_name = alias_it( afa_def_account + ':' + user )
+						afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
+						end(user)
+						if not afa_item_years:
+							afa_item_years = 1
+						else:
+							afa_item_years = int(afa_item_years)
+						correct = True
+					except Exception:
+						print CL_INF + 'Chose correct entry or enter string.' + CL_E
 
-				# let the user chose the afa item
-				correct = False
-				while not correct:
-					user = raw_input(CL_TXT + afa_def_account + ':' + CL_E)
-					end(user)
-					if user:
-						try:
-							# user enters number
-							if afa_table.keys()[int(user)-1] in afa_table:
-								afa_item = afa_table.keys()[int(user)-1]
-								afa_item_years = afa_table[afa_item][0]
-								afa_item_name = afa_table[afa_item][1]
-								correct = True
-						except Exception:
-							try:
-								# user enters string
-								afa_item_name = alias_it( afa_def_account + ':' + user )
-								afa_item_years = raw_input(CL_TXT + 'Years: ' + CL_E)
-								end(user)
-								if not afa_item_years:
-									afa_item_years = 1
-								else:
-									afa_item_years = int(afa_item_years)
-								correct = True
-							except Exception:
-								print CL_INF + 'Chose correct entry or enter string.' + CL_E
-
-
-				# NONAFA here !!
-				# generate the nonafa transaction, if percentage is < 1.0
-				# NONAFA here !!
-
-				if percentage < 1.0:
-					# get code
-					tmp_nonafa_code = '(' + trans.code + ') ' if trans.code else ''
-
-					# get comment
-					tmp_nonafa_comment = '\n ;' + '\n ;'.join(trans.comments) if len(trans.comments) > 0 else ''
-					tmp_nonafa_acc_comment = '\n ;' + '\n ;'.join(acc.comments) if len(acc.comments) > 0 else ''
-					if afa_append_comment:
-						tmp_nonafa_comment += tmp_nonafa_acc_comment
-						tmp_nonafa_acc_comment = ''
-
-					# make account
-					tmp_nonafa_account = afa_item_name.replace('[ACCOUNT]', afanon_def_account)
-
-					# get amount
-					tmp_real_amount = get_real_amount_with_percentage(acc.amount.amount, percentage, True)
-
-					# generate nonafa transaction (on the same day)
-					tmp_nonafa = trans.date.strftime(date_format) + ' * ' + tmp_nonafa_code + trans.payee + tmp_nonafa_comment + '\n ' + tmp_nonafa_account + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + acc.name + tmp_nonafa_acc_comment
-
-					# append it
-					all_afas.append( (trans.date.year, tmp_nonafa) )
-
-				# generate a single afa transaction, while it's bellow the afa_threshold
-				if acc.amount.amount < afa_threshold_amount * 10000:
-					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), percentage=percentage) )
-				# generate transactions over X year, where X = afa_item_years
-				else:
-					if afa_per_day_or_month == 'day':
-						per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
-					else:
-						per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (12 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
-					all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), per_amount, percentage) )
+		# generate a single afa transaction, while it's bellow the afa_threshold
+		if acc.amount.amount < afa_threshold_amount * 10000:
+			all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), percentage=percentage) )
+		# generate transactions over X year, where X = afa_item_years
+		else:
+			if afa_per_day_or_month == 'day':
+				per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (365 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
+			else:
+				per_amount = ledgerparse.Money( real_amount=int( str( get_real_amount_with_percentage(acc.amount.amount, percentage) / (12 * afa_item_years) ).replace('.', dec_sep)[:-2] + '00' ), dec_sep=dec_sep )
+			all_afas.extend( self.afa_generate_trans(trans, acc, afa_item_name.replace('[ACCOUNT]', afa_def_account), per_amount, percentage) )
 
 		# append the transactions to the journal(s)
 
