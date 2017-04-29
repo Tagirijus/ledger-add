@@ -161,6 +161,10 @@ print CL_TXT + 'Using', ledger_file, 'for computing.' + CL_E
 
 # functions and classes
 
+def top_acc(account):
+	"""Get top account from string like 'Expenses:Car:Gas'."""
+	return account.split(':')[len(account.split(':')) - 1]
+
 def get_real_amount_with_percentage(original_amount, percentage, private=False):
 	# rounds the last two digits of the real_amount of the Money class
 	new = int( original_amount * percentage )
@@ -1203,7 +1207,7 @@ class ledgerer_class(object):
 
 		# make a single transaction
 		if type(per_amount).__name__ != 'Money':
-			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + account_expense.name + tmp_acc_comment) ]
+			return [ (starting_date.year, datetime.datetime(starting_date.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + ':' + top_acc(account_expense.name) + '  ' + default_commodity + ' ' + str(ledgerparse.Money(real_amount=tmp_real_amount, dec_sep=dec_sep)) + '\n ' + account_expense.name + tmp_acc_comment) ]
 		# make one transactions per year, till the acc.amount is <= 0 - subtracted by per_amount per day
 		else:
 			output = []
@@ -1234,7 +1238,7 @@ class ledgerer_class(object):
 
 
 				# generate transaction for this year
-				output.append( (actual.year, datetime.datetime(actual.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + '  ' + default_commodity + ' ' + str(amount) + '\n ' + account_expense.name + tmp_acc_comment) )
+				output.append( (actual.year, datetime.datetime(actual.year, 12, 31).strftime(date_format) + ' * ' + tmp_code + trans.payee + tmp_comment + '\n ' + account_afa + ':' + top_acc(account_expense.name) + '  ' + default_commodity + ' ' + str(amount) + '\n ' + account_expense.name + tmp_acc_comment) )
 
 				# go to next year
 				actual = datetime.datetime(working.year,1,1)
