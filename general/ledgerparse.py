@@ -1,0 +1,873 @@
+"""
+A simple ledger-cli parser.
+
+This programm can parse a ledger journal into a python object using simple regex.
+Why? The native ledger module is python2 only and beancount is too difficult to
+install / understand for me.
+
+Attention: to_str() output will delete the thousands separators!
+
+Maybe in later versions this parser will also be able to calculate things.
+
+Author: Manuel Senfft (www.tagirijus.de)
+
+
+TODO:
+    - calculation / balancing
+    - query / search with date and amount values
+"""
+
+from datetime import datetime
+from decimal import Decimal
+import re
+import os
+
+
+class ReplacementDict(dict):
+    """A dict with a __missing__ method."""
+
+    def __missing__(self, key):
+        """Return the key instead."""
+        return str(key)
+
+
+class Journal(object):
+    """Journal which holds the ledger transactions."""
+
+    def __init__(
+        self,
+        journal_string=None,
+        journal_file=None,
+        decimal_sep=None,
+        date_sep=None
+    ):
+        """Initialize the class."""
+        # internal
+        self._aliases = ReplacementDict()
+        self._transactions = []             # [ list with Transaction() objects ]
+        self._times = []                    # [ list with Time() objects ]
+        self._is_time = False
+
+        # public
+        self.non_transactions = ''
+        self.dec_sep = ',' if decimal_sep is None else decimal_sep
+        self.date_sep = '-' if date_sep is None else date_sep
+
+        # no file is given, but a string
+        if journal_file is None and journal_string is not None:
+            self.journal_string = journal_string
+
+        # only a file is given
+        elif journal_file is not None and journal_string is None:
+            self.journal_string = self._file_to_string(
+                journal_file=journal_file
+            )
+
+        # nothing is given, raise error
+        else:
+            raise IOError
+
+        # regex
+        self.re_transaction = re.compile(
+            # 4 digits in the beginning, and stuff with leading whitespace after newline
+            r'(\d{4,}.+(?:\n[^\S\n\r]{1,}.+)+)'
+        )
+
+        self.re_time = re.compile(
+            # starts with i, ends with o + stuff
+            r'(i[^\S\n\r]{1,}.+\no.+)'
+        )
+
+        # init methods
+        self._add_aliases_from_string()
+        self._to_transactions()
+        self._to_non_transactions()
+
+    def _file_to_string(self, journal_file):
+        """Gather all include files as well and return one big string."""
+        out = ''
+
+        # check if file exists and load it
+        if os.path.isfile(journal_file):
+            f = open(journal_file, 'r')
+            the_file = f.readlines()
+            f.close()
+            # and get its path
+            path = os.path.dirname(os.path.abspath(journal_file))
+        else:
+            return ''
+
+        # append it to the final output, till "include" occurs
+        for line in the_file:
+            if line.lower().find('include ') != 0:
+                out += line
+            # otherwise try to load the given file
+            else:
+                # get filename
+                include_me = line.replace('include ', '').replace('Include ', '').strip()
+
+                # cycle through the files, if there are some and append their content
+                # also replace wildcard with regex-wildcard
+                regex = include_me.replace('.', '\.').replace('*', '.*')
+                got_a_file = 0
+                for filename in os.listdir(path):
+                    if re.match(regex, filename):
+                        if got_a_file != 0:
+                            out += '\n\n'
+                        got_a_file = 1
+                        f = open(os.path.join(path, filename), 'r')
+                        out += f.read()
+                        f.close()
+
+                # newline at the end of the found "include ..." if there is one
+                out += '\n' if '\n' in line else ''
+
+        return out
+
+    def _add_aliases_from_string(self, journal_string=None):
+        """Get aliases from the journal_string."""
+        if journal_string is None:
+            journal_string = self.journal_string
+
+        # cycle through ledger journal lines and find "alias" in the beginning
+        for l in journal_string.splitlines():
+            if l[0:5] == 'alias':
+                # get the alias
+                tmp = l.replace('alias ', '').split('=')
+                if len(tmp) == 2:
+                    self._aliases[tmp[0].strip()] = tmp[1].strip()
+
+    def _to_transactions(self, journal_string=None):
+        """Convert the journal_string to transaction objects."""
+        if journal_string is None:
+            journal_string = self.journal_string
+
+        # it's a financial journal
+        if self.re_transaction.findall(journal_string):
+            self._is_time = False
+            # get transaction matches and add the transaction to _transactions
+            for trans in self.re_transaction.findall(journal_string):
+                self.add_transaction(
+                    aliases=self._aliases,
+                    decimal_sep=self.dec_sep,
+                    date_sep=self.date_sep,
+                    transaction_string=trans
+                )
+
+        # it's a time journal
+        elif self.re_time.findall(journal_string):
+            self._is_time = True
+            # get time matches and add them to the _times list
+            for time in self.re_time.findall(journal_string):
+                self.add_time(
+                    aliases=self._aliases,
+                    date_sep=self.date_sep,
+                    time_string=time
+                )
+
+    def _to_non_transactions(self, journal_string=None):
+        # returns a string with all non-transactions (aliases, comments, etc.)
+        if journal_string is None:
+            journal_string = self.journal_string
+
+        # clear previous non_transactions string
+        self.non_transactions = ''
+
+        output = journal_string
+
+        # iterate every financial transaction and delete it from the output string
+        for trans in self.re_transaction.findall(journal_string):
+            # delete this transaction from the output
+            output = output.replace(trans, '')
+
+        # do the same for the time entries
+        for time in self.re_time.findall(journal_string):
+            # delete this from the output
+            output = output.replace(time, '')
+
+        # strip and set new output
+        self.non_transactions = output.strip()
+
+    def add_transaction(
+        self,
+        journal=None,
+        aliases=None,
+        decimal_sep=None,
+        date_sep=None,
+        transaction_string=None,
+        date=None,
+        aux_date=None,
+        state=None,
+        code=None,
+        payee=None,
+        comments=None,
+        postings=None
+    ):
+        """Add a transaction to the _tranactions."""
+        self._transactions.append(Transaction(
+            journal=self,
+            aliases=aliases,
+            decimal_sep=decimal_sep,
+            date_sep=date_sep,
+            transaction_string=transaction_string,
+            date=date,
+            aux_date=aux_date,
+            state=state,
+            code=code,
+            payee=payee,
+            comments=comments,
+            postings=postings
+        ))
+
+    def get_transactions(self):
+        """Get _transactions."""
+        return self._transactions
+
+    def add_time(
+        self,
+        journal=None,
+        aliases=None,
+        date_sep=None,
+        time_string=None,
+        start=None,
+        end=None,
+        account=None
+    ):
+        """Add a transaction to the _tranactions."""
+        self._times.append(Time(
+            journal=self,
+            aliases=aliases,
+            date_sep=date_sep,
+            time_string=time_string,
+            start=start,
+            end=end,
+            account=account
+        ))
+
+    def to_str(self, alias=False, sort_date=False):
+        """Return journal as readable string."""
+        output = ''
+
+        # append the non transactions
+        output += self.non_transactions + '\n\n'
+
+        # get transactions
+        if sort_date:
+            transactions = sorted(
+                [t for t in self._transactions],
+                key=lambda x: x.date
+            )
+        else:
+            transactions = [t for t in self._transactions]
+
+        # append all the transactions
+        output += '\n\n'.join([t.to_str(alias=alias) for t in transactions])
+
+        return output
+
+    def posts(
+        self,
+        state=None,
+        code=None,
+        payee=None,
+        comment=None,
+        account=None
+    ):
+        """Return list with postings with the given search arguments."""
+        #
+        # TODO: date query and amount query (non string search)
+        #
+
+        # initialize the search regex
+        state = '.*' if state is None else state
+        code = '.*' if code is None else code
+        payee = '.*' if payee is None else payee
+        comment = '.*' if comment is None else comment
+        account = '.*' if account is None else account
+
+        # gather the postings if journal is financial
+        if not self._is_time:
+            return [
+                p for t in self._transactions for p in t._postings if
+                re.match(state, t.state) and
+                re.match(code, t.code) and
+                re.match(payee, t.payee) and
+                re.match(comment, str(t.get_comments())) and
+                re.match(account, p.replace_alias(p.account), re.I)
+            ]
+
+        # gather postings if journal is time journal
+        else:
+            return [
+                p for p in self._times if
+                re.match(account, p.replace_alias(p.account), re.I)
+            ]
+
+    def trans(self, *args, **kwargs):
+        """Return list with transactions with the given search arguments."""
+        if not self._is_time:
+            # it's financial
+            return set(
+                [p.trans() for p in self.posts(*args, **kwargs)]
+            )
+        else:
+            # it's time
+            return set(
+                [p for p in self.posts(*args, **kwargs)]
+            )
+
+    def balance(self, account=None):
+        """
+        Return balance of given account.
+
+        Todo:
+            - allow search querries like <= date or > amount etc.
+                --> like a ledger querry with '-p ...'
+        """
+        account = '.*' if account is None else account
+
+        # search in financial transactions
+        if not self._is_time:
+            return sum(
+                [
+                    p.balance() for t in self._transactions for p in t._postings
+                    if re.match(account, p.replace_alias(p.account), re.I)
+                ]
+            )
+
+        # search in times
+        else:
+            return sum(
+                [
+                    p.hours() for p in self._times
+                    if re.match(account, p.replace_alias(p.account), re.I)
+                ]
+            )
+
+
+class Transaction(object):
+    """A ledger transaction object."""
+
+    def __init__(
+        self,
+        journal=None,
+        aliases=None,
+        decimal_sep=None,
+        date_sep=None,
+        transaction_string=None,
+        date=None,
+        aux_date=None,
+        state=None,
+        code=None,
+        payee=None,
+        comments=None,
+        postings=None
+    ):
+        """Initialize the class."""
+        # internal
+        self._journal = journal
+        self._aliases = ReplacementDict() if aliases is None else aliases
+        self._comments = [] if comments is None else comments
+        self._postings = [] if postings is None else postings
+
+        # public
+        self.dec_sep = ',' if decimal_sep is None else decimal_sep
+        self.date_sep = '-' if date_sep is None else date_sep
+        self.transaction_string = transaction_string
+        self.date = datetime.now() if date is None else date
+        self.aux_date = datetime.now() if aux_date is None else aux_date
+        self.state = str(state)
+        self.code = str(code)
+        self.payee = str(payee)
+
+        # regex
+        self.re_transaction_data = re.compile(
+            # 4 digit year, 2 digit month and 2 digit day
+            r'(?P<year>\d{4})[/|-](?P<month>\d{2})[/|-](?P<day>\d{2})'
+            # same for aux_date, but with leading '=' or nothing
+            r'(?:=(?P<year_aux>\d{4})[/|-](?P<month_aux>\d{2})[/|-](?P<day_aux>\d{2}))?'
+            # leading whitespace with * or ! or only whitespace
+            r'[^\S\n\r]{1,}(?P<state>[\*|!])?'
+            # leading white space + code inside '()' + whitespace or only withespace
+            r'[^\S\n\r]{1,}?(\((?P<code>[^\)].+)\)[^\S\n\r]{1,})?'
+            # string for payee
+            r'(?P<payee>.+)'
+        )
+
+        self.re_comment = re.compile(
+            # string with leading whitespace and ';'
+            r'[^\S\n\r]{1,};(.+)'
+        )
+
+        # init methods
+        # fill from string, if it's given
+        if self.transaction_string is not None:
+            self._to_transaction()
+
+        # otherwise assume other values are given and we need the transaction_string
+        else:
+            self._to_transaction_string()
+
+    def _to_transaction(self, transaction_string=None):
+        """Convert the transaction_string into a transaction object."""
+        if transaction_string is None:
+            transaction_string = self.transaction_string
+
+        # cycle through the lines of the given transaction_string
+        is_trans = True
+        for line in transaction_string.splitlines():
+
+            # get matches
+            m_trans = self.re_transaction_data.match(line)
+            m_comment = self.re_comment.match(line)
+
+            # it's a transaction header
+            if m_trans:
+
+                # get the date
+                self.date = datetime(
+                    int(m_trans.group('year')),
+                    int(m_trans.group('month')),
+                    int(m_trans.group('day'))
+                )
+
+                # get the aux date
+                if (
+                    m_trans.group('year_aux') is not None and
+                    m_trans.group('month_aux') is not None and
+                    m_trans.group('day_aux') is not None
+                ):
+                    self.aux_date = datetime(
+                        int(m_trans.group('year_aux')),
+                        int(m_trans.group('month_aux')),
+                        int(m_trans.group('day_aux'))
+                    )
+                else:
+                    self.aux_date = self.date
+
+                # get the state
+                if m_trans.group('state') is not None:
+                    self.state = m_trans.group('state')
+                else:
+                    self.state = ''
+
+                # get the code
+                if m_trans.group('code') is not None:
+                    self.code = m_trans.group('code')
+                else:
+                    self.code = ''
+
+                # get the payee
+                self.payee = m_trans.group('payee')
+
+            # it's a comment of the transaction
+            elif m_comment and is_trans:
+                self.add_comment(m_comment.group(1))
+
+            # it's a comment of the last added account
+            elif m_comment and not is_trans:
+                # safety add
+                if len(self._postings) > 0:
+                    # choose the last account and add the comment
+                    self._postings[len(self._postings) - 1].add_comment(
+                        m_comment.group(1)
+                    )
+
+            # it's an account - from now no more transaction related comments
+            else:
+                is_trans = False
+                self.add_posting(
+                    transaction=self,
+                    aliases=self._aliases,
+                    decimal_sep=self.dec_sep,
+                    posting_string=line
+                )
+
+        # raise an error if there are more than one no_amount account in the accounts
+        if len([a for a in self._postings if a.no_amount]) > 1:
+            print('Accounts cannot balance. No valid ledger format!')
+            exit()
+
+    def _to_transaction_string(self):
+        """Convert given variables to the _transaction_string."""
+        self.transaction_string = self.to_str()
+
+    def add_posting(
+        self,
+        transaction=None,
+        aliases=None,
+        decimal_sep=',',
+        posting_string=None,
+        account=None,
+        commodity=None,
+        amount=None,
+        no_amount=None,
+        comments=None
+    ):
+        """Add an account to the transaction object."""
+        self._postings.append(Posting(
+            transaction=transaction,
+            aliases=aliases,
+            decimal_sep=decimal_sep,
+            posting_string=posting_string,
+            account=account,
+            commodity=commodity,
+            amount=amount,
+            no_amount=no_amount,
+            comments=comments
+        ))
+
+    def get_accounts(self):
+        """Return list with accounts."""
+        return self._postings
+
+    def add_comment(self, text=''):
+        """Add a comment to the _coments."""
+        self._comments.append(text)
+
+    def get_comments(self):
+        """Return list with comments."""
+        return self._comments
+
+    def to_str(self, alias=False):
+        """Convert attributes to readable ledger transaction string."""
+        # get date
+        tmp_date = self.date.strftime(
+            '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
+        )
+
+        # get aux date
+        tmp_aux_date = (
+            '=' + self.aux_date.strftime(
+                '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
+            ) if self.aux_date != self.date else ''
+        )
+
+        # get state
+        tmp_state = ' ' + self.state if self.state else ''
+
+        # get code
+        tmp_code = ' (' + self.code + ')' if self.code else ''
+
+        # get payee
+        tmp_payee = ' ' + self.payee
+
+        # get comments
+        if len(self._comments) > 0:
+            tmp_comments = '\n ;' + '\n ;'.join(self._comments)
+        else:
+            tmp_comments = ''
+
+        # get accounts with its comments
+        tmp_accounts = '\n' + '\n'.join([x.to_str(alias=alias) for x in self._postings])
+
+        return (
+            tmp_date + tmp_aux_date + tmp_state + tmp_code + tmp_payee + tmp_comments +
+            tmp_accounts
+        )
+
+    def balance(self, account=None):
+        """Return account with balanced amount according to other accounts."""
+        if account is None:
+            return Decimal('0.00')
+
+        return Decimal('0.00') - sum(
+            [
+                p.balance() for p in self._postings
+                if p.account != account
+            ]
+        )
+
+
+class Posting(object):
+    """A ledger posting object."""
+
+    def __init__(
+        self,
+        transaction=None,
+        aliases=None,
+        decimal_sep=',',
+        posting_string=None,
+        account=None,
+        commodity=None,
+        amount=None,
+        no_amount=None,
+        comments=None
+    ):
+        """Initialize the class."""
+        # cancel if transaction is no Transaction object
+        if type(transaction) is not Transaction:
+            print('No proper transaction linked to the posting.')
+            exit()
+
+        # internal
+        self._transaction = transaction
+        self._aliases = ReplacementDict() if aliases is None else aliases
+        self._comments = [] if comments is None else comments
+
+        # public
+        self.dec_sep = decimal_sep
+        self.posting_string = posting_string
+        self.account = str(account)
+        self.commodity = commodity
+        self.amount = amount
+        self.no_amount = False if no_amount is None else no_amount
+
+        # regex
+        self.re_posting = re.compile(
+            # the account with one leading whitespace and following two whitespaces
+            r'[^\S\n\r]{1,}(?P<account>[^;].+)(?:[^\S\n\r]{2,})'
+            # commodity which is no number and one following whitespace or nothing
+            r'(?:(?P<commodity_front>[^\d].*)[^\S\n\r]{1,})?'
+            # the amount with +/- or not and a number with ',' or '.' as seperators
+            r'(?P<amount>[-+]?\d+(?:[,|\.]?\d+)?)?'
+            # commodity or not which is no number and one leading whitespace
+            r'(?:[^\S\n\r]{1,}(?P<commodity_back>[^\d].+))?'
+        )
+
+        self.re_posting_only = re.compile(
+            # the account with one leading whitespace
+            r'[^\S\n\r]{1,}(?P<account>[^;].+)'
+        )
+
+        # init methods
+        # fill from string, if it's given
+        if self.posting_string is not None:
+            self._to_postings()
+
+        # otherwise assume other values are given and we need the account_string
+        else:
+            self._to_postings_string()
+
+    def _to_postings(self, posting_string=None):
+        """Convert the posting_string to a ledger posting object."""
+        if posting_string is None:
+            posting_string = self.posting_string
+
+        # get matches
+        m_posting = self.re_posting.match(posting_string)
+        m_posting_only = self.re_posting_only.match(posting_string)
+
+        # what is the match?
+        if m_posting:
+
+            # get its account name
+            self.account = m_posting.group('account')
+
+            # get the commodity
+            if m_posting.group('commodity_front') is not None:
+                self.commodity = m_posting.group('commodity_front')
+            elif m_posting.group('commodity_back') is not None:
+                self.commodity = m_posting.group('commodity_back')
+            else:
+                self.commodity = ''
+
+            # get the amount
+            if self.dec_sep == ',':
+                # get rid of thousand separator
+                # and replace ',' with '.'
+                tmp_amount = m_posting.group('amount').replace('.', '').replace(
+                    ',', '.'
+                )
+            else:
+                # only get rid of thousand separator
+                tmp_amount = m_posting.group('amount').replace(',', '')
+
+            self.amount = Decimal(tmp_amount)
+
+        # it's an posting without amount
+        elif m_posting_only:
+            # it' a no_amount posting
+            self.no_amount = True
+
+            # get its name
+            self.account = m_posting_only.group('account')
+
+            # get the commodity
+            self.commodity = ''
+
+            # get the amount
+            self.amount = Decimal('0.00')
+
+    def _to_posting_string(self):
+        """Get posting_string from data."""
+        self.posting_string = self.to_str()
+
+    def trans(self):
+        """Refer to the linked transaction."""
+        return self._transaction
+
+    def replace_alias(self, original):
+        """Replace the account name with the aliases."""
+        # check if there are subaccounts and use these first
+        if ':' in original:
+            work_with_me = original[0:original.find(':')]
+            append = original[original.find(':'):]
+        # or just use the original string
+        else:
+            work_with_me = original
+            append = ''
+
+        # return it
+        return self._aliases[work_with_me] + append
+
+    def add_comment(self, text=''):
+        """Add a comment to _comments."""
+        self._comments.append(text)
+
+    def get_comments(self):
+        """Get comments."""
+        return self._comments
+
+    def balance(self):
+        """Return account with balanced amount according to other accounts of trans."""
+        if self.no_amount:
+            return Decimal('0.00') - sum(
+                [
+                    p.amount for p in self._transaction._postings
+                    if p.account != self.account
+                ]
+            )
+        else:
+            return self.amount
+
+    def to_str(self, alias=False):
+        """Return readable ledger posting string."""
+        # get the account name
+        tmp_name = self.replace_alias(self.account) if alias else self.account
+
+        # get the commodity
+        tmp_commodity = '  {} '.format(self.commodity) if self.commodity else ''
+
+        # get amount
+        tmp_amount = (
+            str(self.amount).replace('.', self.dec_sep) if self.amount != 0 else ''
+        )
+
+        # get comments
+        tmp_comments = (
+            '\n ;' + '\n ;'.join(self._comments) if len(self._comments) > 0 else ''
+        )
+
+        # return string for this account
+        return ' ' + tmp_name + tmp_commodity + tmp_amount + tmp_comments
+
+
+class Time(object):
+    """Object holding a single time data of a time journal."""
+
+    def __init__(
+        self,
+        journal=None,
+        aliases=None,
+        date_sep=None,
+        time_string=None,
+        start=None,
+        end=None,
+        account=None
+    ):
+        """Initialize the class."""
+        if type(journal) is not Journal:
+            print('No proper journal linked to the time post.')
+            exit()
+
+        # internal
+        self._journal = journal
+        self._aliases = ReplacementDict() if aliases is None else aliases
+
+        # public
+        self.date_sep = '-' if date_sep is None else date_sep
+        self.time_string = time_string
+        self.start = datetime.now() if start is None else start
+        self.end = datetime.now() if end is None else end
+        self.account = str(account)
+
+        # regex
+        self.re_time_data = re.compile(
+            # starts with i + whitspace
+            r'i[^\S\n\r]{1,}'
+            # 4 digit year + sep + 2 digit month + sep + 2 digit day + whitespace
+            r'(?P<s_year>\d{4})[/|-](?P<s_month>\d{2})[/|-](?P<s_day>\d{2})[^\S\n\r]{1,}'
+            # 2 digit hour + : + 2 digit minute + : + 2 digit second + whitespace
+            r'(?P<s_hour>\d{2}):(?P<s_minute>\d{2}):(?P<s_second>\d{2})[^\S\n\r]{1,}'
+            # account string till end of line
+            r'(?P<account>.+)[\S\n\r]'
+            # starts with o + whitespace
+            r'o[^\S\n\r]{1,}'
+            # 4 digit year + sep + 2 digit month + sep + 2 digit day + whitespace
+            r'(?P<e_year>\d{4})[/|-](?P<e_month>\d{2})[/|-](?P<e_day>\d{2})[^\S\n\r]{1,}'
+            # 2 digit hour + : + 2 digit minute + : + 2 digit second
+            r'(?P<e_hour>\d{2}):(?P<e_minute>\d{2}):(?P<e_second>\d{2})'
+        )
+
+        # init method
+        self._to_time()
+
+    def _to_time(self, time_string=None):
+        """Convert string to time object."""
+        if time_string is None:
+            time_string = self.time_string
+
+        m_time = self.re_time_data.match(time_string)
+
+        if m_time:
+            # fill the data
+            self.start = datetime(
+                year=int(m_time.group('s_year')),
+                month=int(m_time.group('s_month')),
+                day=int(m_time.group('s_day')),
+                hour=int(m_time.group('s_hour')),
+                minute=int(m_time.group('s_minute')),
+                second=int(m_time.group('s_second'))
+            )
+
+            self.account = m_time.group('account')
+
+            self.end = datetime(
+                year=int(m_time.group('e_year')),
+                month=int(m_time.group('e_month')),
+                day=int(m_time.group('e_day')),
+                hour=int(m_time.group('e_hour')),
+                minute=int(m_time.group('e_minute')),
+                second=int(m_time.group('e_second'))
+            )
+
+    def replace_alias(self, original):
+        """Replace the account name with the aliases."""
+        # check if there are subaccounts and use these first
+        if ':' in original:
+            work_with_me = original[0:original.find(':')]
+            append = original[original.find(':'):]
+        # or just use the original string
+        else:
+            work_with_me = original
+            append = ''
+
+        # return it
+        return self._aliases[work_with_me] + append
+
+    def to_str(self, alias=False):
+        """Return the string in ledger format."""
+        # get account
+        account = self.replace_alias(self.account) if alias else self.account
+
+        # starting
+        output = 'i {} {}\n'.format(
+            self.start.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep)),
+            account
+        )
+
+        # ending
+        output += 'o {}'.format(
+            self.end.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep))
+        )
+
+        return output
+
+    def time(self):
+        """Return timedelta."""
+        return self.end - self.start
+
+    def hours(self):
+        """Return hours as Decimal."""
+        return Decimal(self.time().total_seconds() / 3600)
