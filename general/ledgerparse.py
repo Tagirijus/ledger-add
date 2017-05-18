@@ -42,13 +42,10 @@ class Journal(object):
         date_sep=None
     ):
         """Initialize the class."""
-        # internal
         self._aliases = ReplacementDict()
         self._transactions = []             # [ list with Transaction() objects ]
         self._times = []                    # [ list with Time() objects ]
         self._is_time = False
-
-        # public
         self.non_transactions = ''
         self.dec_sep = ',' if decimal_sep is None else decimal_sep
         self.date_sep = '-' if date_sep is None else date_sep
@@ -159,11 +156,7 @@ class Journal(object):
             self._is_time = True
             # get time matches and add them to the _times list
             for time in self.re_time.findall(journal_string):
-                self.add_time(
-                    aliases=self._aliases,
-                    date_sep=self.date_sep,
-                    time_string=time
-                )
+                self.add_time(time_string=time)
 
     def _to_non_transactions(self, journal_string=None):
         # returns a string with all non-transactions (aliases, comments, etc.)
@@ -204,8 +197,20 @@ class Journal(object):
         postings=None
     ):
         """Add a transaction to the _tranactions."""
+        if journal is None:
+            journal = self
+
+        if aliases is None:
+            aliases = self._aliases
+
+        if decimal_sep is None:
+            decimal_sep = self.decimal_sep
+
+        if date_sep is None:
+            date_sep = self.date_sep
+
         self._transactions.append(Transaction(
-            journal=self,
+            journal=journal,
             aliases=aliases,
             decimal_sep=decimal_sep,
             date_sep=date_sep,
@@ -243,6 +248,18 @@ class Journal(object):
             end=end,
             account=account
         ))
+
+    def get_times(self):
+        """Get _times."""
+        return self._times
+
+    def set_is_time(self, value):
+        """Set is_time."""
+        self._is_time = bool(value)
+
+    def get_is_time(self):
+        """Get is_time."""
+        return self._is_time
 
     def to_str(self, alias=False, sort_date=False):
         """Return journal as readable string."""
@@ -364,21 +381,23 @@ class Transaction(object):
         postings=None
     ):
         """Initialize the class."""
-        # internal
         self._journal = journal
         self._aliases = ReplacementDict() if aliases is None else aliases
         self._comments = [] if comments is None else comments
         self._postings = [] if postings is None else postings
 
-        # public
         self.dec_sep = ',' if decimal_sep is None else decimal_sep
         self.date_sep = '-' if date_sep is None else date_sep
         self.transaction_string = transaction_string
-        self.date = datetime.now() if date is None else date
-        self.aux_date = datetime.now() if aux_date is None else aux_date
-        self.state = str(state)
-        self.code = str(code)
-        self.payee = str(payee)
+
+        self._date = datetime.now()
+        self.set_date(date)
+        self._aux_date = datetime.now()
+        self.set_aux_date(aux_date)
+        self._state = '*'
+        self.set_state(state)
+        self.code = '' if code is None else str(code)
+        self.payee = '' if payee is None else str(payee)
 
         # regex
         self.re_transaction_data = re.compile(
@@ -425,7 +444,7 @@ class Transaction(object):
             if m_trans:
 
                 # get the date
-                self.date = datetime(
+                self._date = datetime(
                     int(m_trans.group('year')),
                     int(m_trans.group('month')),
                     int(m_trans.group('day'))
@@ -437,19 +456,19 @@ class Transaction(object):
                     m_trans.group('month_aux') is not None and
                     m_trans.group('day_aux') is not None
                 ):
-                    self.aux_date = datetime(
+                    self._aux_date = datetime(
                         int(m_trans.group('year_aux')),
                         int(m_trans.group('month_aux')),
                         int(m_trans.group('day_aux'))
                     )
                 else:
-                    self.aux_date = self.date
+                    self._aux_date = self._date
 
                 # get the state
                 if m_trans.group('state') is not None:
-                    self.state = m_trans.group('state')
+                    self._state = m_trans.group('state')
                 else:
-                    self.state = ''
+                    self._state = '*'
 
                 # get the code
                 if m_trans.group('code') is not None:
@@ -476,21 +495,28 @@ class Transaction(object):
             # it's an account - from now no more transaction related comments
             else:
                 is_trans = False
-                self.add_posting(
-                    transaction=self,
-                    aliases=self._aliases,
-                    decimal_sep=self.dec_sep,
-                    posting_string=line
-                )
+                self.add_posting(posting_string=line)
 
         # raise an error if there are more than one no_amount account in the accounts
-        if len([a for a in self._postings if a.no_amount]) > 1:
+        if len([a for a in self._postings if a._no_amount]) > 1:
             print('Accounts cannot balance. No valid ledger format!')
             exit()
 
     def _to_transaction_string(self):
         """Convert given variables to the _transaction_string."""
         self.transaction_string = self.to_str()
+
+    def journal(self):
+        """Get journal."""
+        return self._journal
+
+    def add_comment(self, text=''):
+        """Add a comment to the _coments."""
+        self._comments.append(text)
+
+    def get_comments(self):
+        """Return list with comments."""
+        return self._comments
 
     def add_posting(
         self,
@@ -505,6 +531,15 @@ class Transaction(object):
         comments=None
     ):
         """Add an account to the transaction object."""
+        if transaction is None:
+            transaction = self
+
+        if aliases is None:
+            aliases = self._aliases
+
+        if decimal_sep is None:
+            decimal_sep = self.decimal_sep
+
         self._postings.append(Posting(
             transaction=transaction,
             aliases=aliases,
@@ -517,34 +552,63 @@ class Transaction(object):
             comments=comments
         ))
 
-    def get_accounts(self):
-        """Return list with accounts."""
+    def get_postings(self):
+        """Return list with postings."""
         return self._postings
 
-    def add_comment(self, text=''):
-        """Add a comment to the _coments."""
-        self._comments.append(text)
+    def set_date(self, value):
+        """Set date."""
+        if type(value) is datetime:
+            self._date = value
+        else:
+            try:
+                self._date = value.strptime('%Y-%m-%d')
+            except Exception:
+                pass
 
-    def get_comments(self):
-        """Return list with comments."""
-        return self._comments
+    def get_date(self):
+        """Get date."""
+        return self._date
+
+    def set_aux_date(self, value):
+        """Set aux_date."""
+        if type(value) is datetime:
+            self._aux_date = value
+        else:
+            try:
+                self._aux_date = value.strptime('%Y-%m-%d')
+            except Exception:
+                pass
+
+    def get_aux_date(self):
+        """Get aux_date."""
+        return self._aux_date
+
+    def set_state(self, value):
+        """Set state."""
+        if str(value) == '*' or str(value) == '!':
+            self._state = str(value)
+
+    def get_state(self):
+        """Get state."""
+        return self._state
 
     def to_str(self, alias=False):
         """Convert attributes to readable ledger transaction string."""
         # get date
-        tmp_date = self.date.strftime(
+        tmp_date = self._date.strftime(
             '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
         )
 
         # get aux date
         tmp_aux_date = (
-            '=' + self.aux_date.strftime(
+            '=' + self._aux_date.strftime(
                 '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
-            ) if self.aux_date != self.date else ''
+            ) if self._aux_date != self._date else ''
         )
 
         # get state
-        tmp_state = ' ' + self.state if self.state else ''
+        tmp_state = ' ' + self._state
 
         # get code
         tmp_code = ' (' + self.code + ')' if self.code else ''
@@ -600,18 +664,19 @@ class Posting(object):
             print('No proper transaction linked to the posting.')
             exit()
 
-        # internal
         self._transaction = transaction
         self._aliases = ReplacementDict() if aliases is None else aliases
         self._comments = [] if comments is None else comments
 
-        # public
-        self.dec_sep = decimal_sep
+        self.dec_sep = ',' if decimal_sep is None else decimal_sep
         self.posting_string = posting_string
+
         self.account = str(account)
-        self.commodity = commodity
-        self.amount = amount
-        self.no_amount = False if no_amount is None else no_amount
+        self.commodity = '€' if commodity is None else str(commodity)
+        self._amount = Decimal('0.00')
+        self.set_amount(amount)
+        self._no_amount = True
+        self.set_no_amount(no_amount)
 
         # regex
         self.re_posting = re.compile(
@@ -673,12 +738,12 @@ class Posting(object):
                 # only get rid of thousand separator
                 tmp_amount = m_posting.group('amount').replace(',', '')
 
-            self.amount = Decimal(tmp_amount)
+            self.set_amount(tmp_amount)
 
         # it's an posting without amount
         elif m_posting_only:
             # it' a no_amount posting
-            self.no_amount = True
+            self._no_amount = True
 
             # get its name
             self.account = m_posting_only.group('account')
@@ -687,9 +752,9 @@ class Posting(object):
             self.commodity = ''
 
             # get the amount
-            self.amount = Decimal('0.00')
+            self.set_amount('0.00')
 
-    def _to_posting_string(self):
+    def _to_postings_string(self):
         """Get posting_string from data."""
         self.posting_string = self.to_str()
 
@@ -719,6 +784,25 @@ class Posting(object):
         """Get comments."""
         return self._comments
 
+    def set_amount(self, value):
+        """Set amount."""
+        try:
+            self._amount = Decimal(str(value))
+        except Exception:
+            pass
+
+    def get_amount(self):
+        """Get amount."""
+        return self._amount
+
+    def set_no_amount(self, value):
+        """Set no_amount."""
+        self._no_amount = bool(value)
+
+    def get_no_amount(self):
+        """Get no_amount."""
+        return self._no_amount
+
     def balance(self):
         """Return account with balanced amount according to other accounts of trans."""
         if self.no_amount:
@@ -741,7 +825,7 @@ class Posting(object):
 
         # get amount
         tmp_amount = (
-            str(self.amount).replace('.', self.dec_sep) if self.amount != 0 else ''
+            str(self._amount).replace('.', self.dec_sep) if self._amount != 0 else ''
         )
 
         # get comments
@@ -771,15 +855,16 @@ class Time(object):
             print('No proper journal linked to the time post.')
             exit()
 
-        # internal
         self._journal = journal
         self._aliases = ReplacementDict() if aliases is None else aliases
 
-        # public
         self.date_sep = '-' if date_sep is None else date_sep
         self.time_string = time_string
-        self.start = datetime.now() if start is None else start
-        self.end = datetime.now() if end is None else end
+
+        self._start = datetime.now()
+        self.set_start(start)
+        self._end = datetime.now()
+        self.set_end(end)
         self.account = str(account)
 
         # regex
@@ -812,7 +897,7 @@ class Time(object):
 
         if m_time:
             # fill the data
-            self.start = datetime(
+            self._start = datetime(
                 year=int(m_time.group('s_year')),
                 month=int(m_time.group('s_month')),
                 day=int(m_time.group('s_day')),
@@ -823,7 +908,7 @@ class Time(object):
 
             self.account = m_time.group('account')
 
-            self.end = datetime(
+            self._end = datetime(
                 year=int(m_time.group('e_year')),
                 month=int(m_time.group('e_month')),
                 day=int(m_time.group('e_day')),
@@ -831,6 +916,34 @@ class Time(object):
                 minute=int(m_time.group('e_minute')),
                 second=int(m_time.group('e_second'))
             )
+
+    def set_start(self, value):
+        """Set start."""
+        if type(value) is datetime:
+            self._start = value
+        else:
+            try:
+                self._start = value.strptime('%Y-%m-%d')
+            except Exception:
+                pass
+
+    def get_start(self):
+        """Get start."""
+        return self._start
+
+    def set_end(self, value):
+        """Set end."""
+        if type(value) is datetime:
+            self._end = value
+        else:
+            try:
+                self._end = value.strptime('%Y-%m-%d')
+            except Exception:
+                pass
+
+    def get_end(self):
+        """Get end."""
+        return self._end
 
     def replace_alias(self, original):
         """Replace the account name with the aliases."""
@@ -853,20 +966,20 @@ class Time(object):
 
         # starting
         output = 'i {} {}\n'.format(
-            self.start.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep)),
+            self._start.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep)),
             account
         )
 
         # ending
         output += 'o {}'.format(
-            self.end.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep))
+            self._end.strftime('%Y{s}%m{s}%d %H:%M:%S'.format(s=self.date_sep))
         )
 
         return output
 
     def time(self):
         """Return timedelta."""
-        return self.end - self.start
+        return self._end - self._start
 
     def hours(self):
         """Return hours as Decimal."""

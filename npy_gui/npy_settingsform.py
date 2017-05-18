@@ -183,9 +183,14 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             begin_entry_at=26
         )
         self.def_state = self.add_widget_intelligent(
-            npyscreen.TitleText,
+            npyscreen.TitleSelectOne,
             name='Default state:',
-            begin_entry_at=26
+            begin_entry_at=26,
+            values=['*', '!'],
+            value=[0],
+            slow_scroll=True,
+            scroll_exit=True,
+            max_height=2
         )
         self.def_code = self.add_widget_intelligent(
             npyscreen.TitleText,
@@ -269,7 +274,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
     def beforeEditing(self):
         """Get values from settings object."""
         self.data_path.value = self.parentApp.S.data_path
-        self.def_state.value = self.parentApp.S.def_state
+        self.def_state.value = [self.def_state.values.index(self.parentApp.S.def_state)]
         self.def_code.value = self.parentApp.S.def_code
         self.def_payee.value = self.parentApp.S.def_payee
         self.def_commodity.value = self.parentApp.S.def_commodity
@@ -321,7 +326,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.S.data_path = data_path
 
             # defaults
-            self.parentApp.S.def_state = self.def_state.value
+            self.parentApp.S.def_state = self.def_state.values[self.def_state.value[0]]
             self.parentApp.S.def_code = self.def_code.value
             self.parentApp.S.def_payee = self.def_payee.value
             self.parentApp.S.def_commodity = self.def_commodity.value

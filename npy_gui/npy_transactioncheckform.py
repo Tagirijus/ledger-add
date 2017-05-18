@@ -27,10 +27,7 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
         self.m = self.new_menu(name='Menu')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')
 
-        self.date = self.add(
-            npyscreen.TitleDateCombo,
-            name='Date:'
-        )
+        # pager here
 
     def beforeEditing(self):
         """Get values from temp."""
