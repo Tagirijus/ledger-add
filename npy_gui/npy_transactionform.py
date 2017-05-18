@@ -27,6 +27,11 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             '^Q': self.on_cancel
         })
 
+    def new_trans(self):
+        """Make new transaction."""
+        self.parentApp.tmpTrans_new = True
+        self.beforeEditing()
+
     def show_settings(self):
         """Switch to settings form."""
         self.values_to_tmp()
@@ -42,6 +47,7 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         """Create the form."""
         # create the menu
         self.m = self.new_menu(name='Menu')
+        self.m.addItem(text='New', onSelect=self.new_trans, shortcut='n')
         self.m.addItem(text='Settings', onSelect=self.show_settings, shortcut='s')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')
 
@@ -164,27 +170,74 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
 
         acc = self.parentApp.tmpTrans.get_postings()[0]
         self.account_a.value = acc.account
-        self.account_a_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
+        self.account_a_amount.value = (
+            '' if acc.get_no_amount() else str(acc.get_amount_str())
+        )
         self.account_a_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[1]
         self.account_b.value = acc.account
-        self.account_b_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
+        self.account_b_amount.value = (
+            '' if acc.get_no_amount() else str(acc.get_amount_str())
+        )
         self.account_b_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[2]
         self.account_c.value = acc.account
-        self.account_c_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
+        self.account_c_amount.value = (
+            '' if acc.get_no_amount() else str(acc.get_amount_str())
+        )
         self.account_c_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[3]
         self.account_d.value = acc.account
-        self.account_d_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
+        self.account_d_amount.value = (
+            '' if acc.get_no_amount() else str(acc.get_amount_str())
+        )
         self.account_d_comments.value = '\n'.join(acc.get_comments())
 
     def values_to_tmp(self):
         """Store vlaues to temp."""
-        pass
+        self.parentApp.tmpTrans.set_date(self.date.value)
+        self.parentApp.tmpTrans.set_state(
+            self.state.values[self.state.value[0]]
+        )
+        self.parentApp.tmpTrans.code = self.code.value
+        self.parentApp.tmpTrans.payee = self.payee.value
+        self.parentApp.tmpTrans.set_comments(
+            self.comments.value.splitlines()
+        )
+
+        # clear postigns to add them new from widgets
+        self.parentApp.tmpTrans.clear_postings()
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_a.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_a_amount.value,
+            comments=self.account_a_comments.value.splitlines()
+        )
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_b.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_b_amount.value,
+            comments=self.account_b_comments.value.splitlines()
+        )
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_c.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_c_amount.value,
+            comments=self.account_c_comments.value.splitlines()
+        )
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_d.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_d_amount.value,
+            comments=self.account_d_comments.value.splitlines()
+        )
 
     def on_ok(self, keypress=None):
         """Press ok."""

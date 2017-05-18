@@ -514,6 +514,11 @@ class Transaction(object):
         """Add a comment to the _coments."""
         self._comments.append(text)
 
+    def set_comments(self, value):
+        """Set comments."""
+        if type(value) is list:
+            self._comments = [str(e) for e in value]
+
     def get_comments(self):
         """Return list with comments."""
         return self._comments
@@ -526,8 +531,8 @@ class Transaction(object):
         posting_string=None,
         account=None,
         commodity=None,
-        amount=None,
         no_amount=None,
+        amount=None,
         comments=None
     ):
         """Add an account to the transaction object."""
@@ -547,10 +552,14 @@ class Transaction(object):
             posting_string=posting_string,
             account=account,
             commodity=commodity,
-            amount=amount,
             no_amount=no_amount,
+            amount=amount,
             comments=comments
         ))
+
+    def clear_postings(self):
+        """Clear the postings."""
+        self._postings = []
 
     def get_postings(self):
         """Return list with postings."""
@@ -654,8 +663,8 @@ class Posting(object):
         posting_string=None,
         account=None,
         commodity=None,
-        amount=None,
         no_amount=None,
+        amount=None,
         comments=None
     ):
         """Initialize the class."""
@@ -673,11 +682,11 @@ class Posting(object):
 
         self.account = str(account)
         self.commodity = '€' if commodity is None else str(commodity)
-        self._amount = Decimal('0.00')
-        self.set_amount(amount)
         self.set_no_amount(
             True if no_amount is None else no_amount
         )
+        self._amount = Decimal('0.00')
+        self.set_amount(amount)
 
         # regex
         self.re_posting = re.compile(
@@ -781,6 +790,11 @@ class Posting(object):
         """Add a comment to _comments."""
         self._comments.append(text)
 
+    def set_comments(self, value):
+        """Set comments."""
+        if type(value) is list:
+            self._comments = [str(e) for e in value]
+
     def get_comments(self):
         """Get comments."""
         return self._comments
@@ -788,13 +802,19 @@ class Posting(object):
     def set_amount(self, value):
         """Set amount."""
         try:
-            self._amount = Decimal(str(value))
+            self._amount = Decimal(str(value).replace(self.dec_sep, '.'))
+            if self._amount > 0:
+                self._no_amount = False
         except Exception:
             pass
 
     def get_amount(self):
         """Get amount."""
         return self._amount
+
+    def get_amount_str(self):
+        """Get amout with correct decimal separator."""
+        return str(self._amount).replace('.', self.dec_sep)
 
     def set_no_amount(self, value):
         """Set no_amount."""
