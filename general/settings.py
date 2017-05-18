@@ -66,12 +66,14 @@ class Settings(object):
         self.ledger_file = (
             'ledger_{year}.journal' if ledger_file is None else ledger_file
         )
-        self._split_years_to_files = True
-        self.set_split_years_to_files(split_years_to_files)
+        self.set_split_years_to_files(
+            True if split_years_to_files is None else split_years_to_files
+        )
 
         # afa feature
-        self._afa_enabled = True
-        self.set_afa_enabled(afa_enabled)
+        self.set_afa_enabled(
+            True if afa_enabled is None else afa_enabled
+        )
         self._afa_threshold_amount = Decimal('487.90')
         self.set_afa_threshold_amount(afa_threshold_amount)
         self.afa_def_account = 'afa' if afa_def_account is None else afa_def_account

@@ -243,16 +243,20 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             begin_entry_at=26
         )
         self.split_years_to_files = self.add_widget_intelligent(
-            npyscreen.TitleText,
+            npyscreen.TitleMultiSelect,
             name='Split years to files:',
             begin_entry_at=26,
-            values=['enabled']
+            values=['enabled'],
+            max_height=2,
+            scroll_exit=True
         )
         self.afa_enabled = self.add_widget_intelligent(
-            npyscreen.TitleText,
+            npyscreen.TitleMultiSelect,
             name='AfA enabled:',
             begin_entry_at=26,
-            values=['enabled']
+            values=['enabled'],
+            max_height=2,
+            scroll_exit=True
         )
         self.afa_threshold_amount = self.add_widget_intelligent(
             npyscreen.TitleText,
@@ -341,12 +345,12 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
 
             # file
             self.parentApp.S.ledger_file = self.ledger_file.value
-            self.parentApp.S.split_years_to_files = (
+            self.parentApp.S.set_split_years_to_files(
                 True if self.split_years_to_files.value == [0] else False
             )
 
             # afa
-            self.parentApp.S.afa_enabled = (
+            self.parentApp.S.set_afa_enabled(
                 True if self.afa_enabled.value == [0] else False
             )
             self.parentApp.S.set_afa_threshold_amount(self.afa_threshold_amount.value)

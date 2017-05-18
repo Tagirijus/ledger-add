@@ -156,30 +156,30 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         if self.parentApp.tmpTrans_new:
             self.parentApp.gen_tmptrans()
 
-        self.date.value = self.parentApp.tmpTrans.date
-        self.state.value = [self.state.values.index(self.parentApp.tmpTrans.state)]
+        self.date.value = self.parentApp.tmpTrans.get_date()
+        self.state.value = [self.state.values.index(self.parentApp.tmpTrans.get_state())]
         self.code.value = self.parentApp.tmpTrans.code
         self.payee.value = self.parentApp.tmpTrans.payee
         self.comments.value = '\n'.join(self.parentApp.tmpTrans.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[0]
         self.account_a.value = acc.account
-        self.account_a_amount.value = '' if acc.no_amount else str(acc.amount)
+        self.account_a_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
         self.account_a_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[1]
         self.account_b.value = acc.account
-        self.account_b_amount.value = '' if acc.no_amount else str(acc.amount)
+        self.account_b_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
         self.account_b_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[2]
         self.account_c.value = acc.account
-        self.account_c_amount.value = '' if acc.no_amount else str(acc.amount)
+        self.account_c_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
         self.account_c_comments.value = '\n'.join(acc.get_comments())
 
         acc = self.parentApp.tmpTrans.get_postings()[3]
         self.account_d.value = acc.account
-        self.account_d_amount.value = '' if acc.no_amount else str(acc.amount)
+        self.account_d_amount.value = '' if acc.get_no_amount() else str(acc.get_amount())
         self.account_d_comments.value = '\n'.join(acc.get_comments())
 
     def values_to_tmp(self):

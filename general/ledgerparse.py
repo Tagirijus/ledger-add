@@ -675,8 +675,9 @@ class Posting(object):
         self.commodity = '€' if commodity is None else str(commodity)
         self._amount = Decimal('0.00')
         self.set_amount(amount)
-        self._no_amount = True
-        self.set_no_amount(no_amount)
+        self.set_no_amount(
+            True if no_amount is None else no_amount
+        )
 
         # regex
         self.re_posting = re.compile(
