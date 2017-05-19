@@ -11,6 +11,7 @@ class Settings(object):
     def __init__(
         self,
         data_path=None,
+        ledger_path=None,
         def_state=None,
         def_code=None,
         def_payee=None,
@@ -19,6 +20,7 @@ class Settings(object):
         def_account_b=None,
         def_account_c=None,
         def_account_d=None,
+        def_account_e=None,
         dec_separator=None,
         date_separator=None,
         ledger_file=None,
@@ -46,6 +48,13 @@ class Settings(object):
         # generate ledgeradd dir under ~/.tagirijus_ledgeradd, if it does not exist
         self.generate_data_path()
 
+        # ledger path
+        self.ledger_path = (os.path.expanduser('~') + '/.tagirijus_ledgeradd/ledger'
+                            if ledger_path is None else ledger_path)
+
+        # generate ledger path, if it does not exist
+        self.generate_ledger_path()
+
         # initialize the attributes
 
         # default values
@@ -57,6 +66,7 @@ class Settings(object):
         self.def_account_b = '' if def_account_b is None else def_account_b
         self.def_account_c = '' if def_account_c is None else def_account_c
         self.def_account_d = '' if def_account_d is None else def_account_d
+        self.def_account_e = '' if def_account_e is None else def_account_e
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
@@ -158,6 +168,7 @@ class Settings(object):
 
         # fetch all setting variables
         out['data_path'] = self.data_path
+        out['ledger_path'] = self.ledger_path
         out['def_state'] = self.def_state
         out['def_code'] = self.def_code
         out['def_payee'] = self.def_payee
@@ -166,6 +177,7 @@ class Settings(object):
         out['def_account_b'] = self.def_account_b
         out['def_account_c'] = self.def_account_c
         out['def_account_d'] = self.def_account_d
+        out['def_account_e'] = self.def_account_e
         out['dec_separator'] = self.dec_separator
         out['date_separator'] = self.date_separator
         out['ledger_file'] = self.ledger_file
@@ -199,6 +211,9 @@ class Settings(object):
         if 'data_path' in js.keys():
             self.data_path = js['data_path']
 
+        if 'ledger_path' in js.keys():
+            self.ledger_path = js['ledger_path']
+
         if 'def_state' in js.keys():
             self.def_state = js['def_state']
 
@@ -222,6 +237,9 @@ class Settings(object):
 
         if 'def_account_d' in js.keys():
             self.def_account_d = js['def_account_d']
+
+        if 'def_account_e' in js.keys():
+            self.def_account_e = js['def_account_e']
 
         if 'dec_separator' in js.keys():
             self.dec_separator = js['dec_separator']
@@ -263,6 +281,19 @@ class Settings(object):
         # create if it does not exist
         if not is_dir:
             os.mkdir(self.data_path)
+
+    def generate_ledger_path(self):
+        """Check if ledger_path exists or create dir."""
+        is_dir = os.path.isdir(str(self.ledger_path))
+        is_file = os.path.isfile(str(self.ledger_path))
+
+        # raise error, if it is a file
+        if is_file:
+            raise IOError
+
+        # create if it does not exist
+        if not is_dir:
+            os.mkdir(self.ledger_path)
 
     def save_settings_to_file(self):
         """Save the settings to file in data_path."""

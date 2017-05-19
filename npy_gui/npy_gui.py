@@ -1,6 +1,5 @@
 """The graphical user interface for the ledgeradd programm."""
 
-from datetime import datetime
 from general.ledgerparse import Transaction
 from general.settings import Settings
 from npy_gui.npy_transactionform import TransactionForm
@@ -11,6 +10,13 @@ import npyscreen
 
 class LedgeraddApplication(npyscreen.NPSAppManaged):
     """The main application object."""
+
+    def __init__(self, arguments, *args, **kwargs):
+        """Initialize the class."""
+        super(LedgeraddApplication, self).__init__(*args, **kwargs)
+
+        # get arguments
+        self.args = arguments
 
     def gen_tmptrans(self):
         """Generate tmpTrans."""
@@ -23,19 +29,28 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
         )
 
         self.tmpTrans.add_posting(
-            account=self.S.def_account_a
+            account=self.S.def_account_a,
+            no_amount=True
         )
 
         self.tmpTrans.add_posting(
-            account=self.S.def_account_b
+            account=self.S.def_account_b,
+            no_amount=True
         )
 
         self.tmpTrans.add_posting(
-            account=self.S.def_account_c
+            account=self.S.def_account_c,
+            no_amount=True
         )
 
         self.tmpTrans.add_posting(
-            account=self.S.def_account_d
+            account=self.S.def_account_d,
+            no_amount=True
+        )
+
+        self.tmpTrans.add_posting(
+            account=self.S.def_account_e,
+            no_amount=True
         )
 
         self.tmpTrans_new = False
@@ -49,6 +64,9 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
         # set global temp variables
         self.tmpTrans = Transaction()
         self.tmpTrans_new = True
+
+        # history for added transactions during runtime of the programm
+        self.History = ''
 
         # create the forms
         self.addForm(

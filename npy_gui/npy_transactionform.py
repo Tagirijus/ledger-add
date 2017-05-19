@@ -14,7 +14,7 @@ class TitleMultiLineEdit(npyscreen.TitleText):
         self.entry_widget.full_reformat()
 
 
-class TransactionForm(npyscreen.ActionFormWithMenus):
+class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
     """Transaction form for entering the transaction data."""
 
     def __init__(self, *arg, **kwargs):
@@ -32,9 +32,15 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         self.parentApp.tmpTrans_new = True
         self.beforeEditing()
 
+    def show_history(self):
+        """Sow the history."""
+        npyscreen.notify_confirm(
+            self.parentApp.History
+        )
+
     def show_settings(self):
         """Switch to settings form."""
-        self.values_to_tmp()
+        self.values_to_tmp(message=False)
         self.parentApp.setNextForm('Settings')
         self.parentApp.switchFormNow()
 
@@ -48,15 +54,16 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         # create the menu
         self.m = self.new_menu(name='Menu')
         self.m.addItem(text='New', onSelect=self.new_trans, shortcut='n')
+        self.m.addItem(text='History', onSelect=self.show_history, shortcut='h')
         self.m.addItem(text='Settings', onSelect=self.show_settings, shortcut='s')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')
 
-        self.date = self.add(
+        self.date = self.add_widget_intelligent(
             npyscreen.TitleDateCombo,
             name='Date:',
             begin_entry_at=20
         )
-        self.state = self.add(
+        self.state = self.add_widget_intelligent(
             npyscreen.TitleSelectOne,
             name='State:',
             begin_entry_at=20,
@@ -66,17 +73,17 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             scroll_exit=True,
             max_height=2
         )
-        self.code = self.add(
+        self.code = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Code:',
             begin_entry_at=20
         )
-        self.payee = self.add(
+        self.payee = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Payee',
             begin_entry_at=20
         )
-        self.comments = self.add(
+        self.comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Comments:',
             begin_entry_at=20,
@@ -84,17 +91,17 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             value=''
         )
 
-        self.account_a = self.add(
+        self.account_a = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account a:',
             begin_entry_at=20
         )
-        self.account_a_amount = self.add(
+        self.account_a_amount = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account a amount:',
             begin_entry_at=20
         )
-        self.account_a_comments = self.add(
+        self.account_a_comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Acc a comments:',
             begin_entry_at=20,
@@ -102,17 +109,17 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             value=''
         )
 
-        self.account_b = self.add(
+        self.account_b = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account b:',
             begin_entry_at=20
         )
-        self.account_b_amount = self.add(
+        self.account_b_amount = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account b amount:',
             begin_entry_at=20
         )
-        self.account_b_comments = self.add(
+        self.account_b_comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Acc b comments:',
             begin_entry_at=20,
@@ -120,17 +127,17 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             value=''
         )
 
-        self.account_c = self.add(
+        self.account_c = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account c:',
             begin_entry_at=20
         )
-        self.account_c_amount = self.add(
+        self.account_c_amount = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account c amount:',
             begin_entry_at=20
         )
-        self.account_c_comments = self.add(
+        self.account_c_comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Acc c comments:',
             begin_entry_at=20,
@@ -138,19 +145,37 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             value=''
         )
 
-        self.account_d = self.add(
+        self.account_d = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account d:',
             begin_entry_at=20
         )
-        self.account_d_amount = self.add(
+        self.account_d_amount = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Account d amount:',
             begin_entry_at=20
         )
-        self.account_d_comments = self.add(
+        self.account_d_comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Acc d comments:',
+            begin_entry_at=20,
+            max_height=2,
+            value=''
+        )
+
+        self.account_e = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account e:',
+            begin_entry_at=20
+        )
+        self.account_e_amount = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account e amount:',
+            begin_entry_at=20
+        )
+        self.account_e_comments = self.add_widget_intelligent(
+            TitleMultiLineEdit,
+            name='Acc e comments:',
             begin_entry_at=20,
             max_height=2,
             value=''
@@ -168,35 +193,47 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         self.payee.value = self.parentApp.tmpTrans.payee
         self.comments.value = '\n'.join(self.parentApp.tmpTrans.get_comments())
 
-        acc = self.parentApp.tmpTrans.get_postings()[0]
-        self.account_a.value = acc.account
-        self.account_a_amount.value = (
-            '' if acc.get_no_amount() else str(acc.get_amount_str())
-        )
-        self.account_a_comments.value = '\n'.join(acc.get_comments())
+        if len(self.parentApp.tmpTrans.get_postings()) > 0:
+            acc = self.parentApp.tmpTrans.get_postings()[0]
+            self.account_a.value = acc.account
+            self.account_a_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_a_comments.value = '\n'.join(acc.get_comments())
 
-        acc = self.parentApp.tmpTrans.get_postings()[1]
-        self.account_b.value = acc.account
-        self.account_b_amount.value = (
-            '' if acc.get_no_amount() else str(acc.get_amount_str())
-        )
-        self.account_b_comments.value = '\n'.join(acc.get_comments())
+        if len(self.parentApp.tmpTrans.get_postings()) > 1:
+            acc = self.parentApp.tmpTrans.get_postings()[1]
+            self.account_b.value = acc.account
+            self.account_b_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_b_comments.value = '\n'.join(acc.get_comments())
 
-        acc = self.parentApp.tmpTrans.get_postings()[2]
-        self.account_c.value = acc.account
-        self.account_c_amount.value = (
-            '' if acc.get_no_amount() else str(acc.get_amount_str())
-        )
-        self.account_c_comments.value = '\n'.join(acc.get_comments())
+        if len(self.parentApp.tmpTrans.get_postings()) > 2:
+            acc = self.parentApp.tmpTrans.get_postings()[2]
+            self.account_c.value = acc.account
+            self.account_c_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_c_comments.value = '\n'.join(acc.get_comments())
 
-        acc = self.parentApp.tmpTrans.get_postings()[3]
-        self.account_d.value = acc.account
-        self.account_d_amount.value = (
-            '' if acc.get_no_amount() else str(acc.get_amount_str())
-        )
-        self.account_d_comments.value = '\n'.join(acc.get_comments())
+        if len(self.parentApp.tmpTrans.get_postings()) > 3:
+            acc = self.parentApp.tmpTrans.get_postings()[3]
+            self.account_d.value = acc.account
+            self.account_d_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_d_comments.value = '\n'.join(acc.get_comments())
 
-    def values_to_tmp(self):
+        if len(self.parentApp.tmpTrans.get_postings()) > 4:
+            acc = self.parentApp.tmpTrans.get_postings()[4]
+            self.account_e.value = acc.account
+            self.account_e_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_e_comments.value = '\n'.join(acc.get_comments())
+
+    def values_to_tmp(self, message=True):
         """Store vlaues to temp."""
         self.parentApp.tmpTrans.set_date(self.date.value)
         self.parentApp.tmpTrans.set_state(
@@ -211,6 +248,7 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
         # clear postigns to add them new from widgets
         self.parentApp.tmpTrans.clear_postings()
 
+        # only add the accounts, if an account was set
         self.parentApp.tmpTrans.add_posting(
             account=self.account_a.value,
             commodity=self.parentApp.S.def_commodity,
@@ -239,13 +277,39 @@ class TransactionForm(npyscreen.ActionFormWithMenus):
             comments=self.account_d_comments.value.splitlines()
         )
 
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_e.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_e_amount.value,
+            comments=self.account_e_comments.value.splitlines()
+        )
+
+        # check if accounts are valid for ledger
+        check_passed = True
+        if self.parentApp.tmpTrans.check()['need_more_accounts']:
+            if message:
+                npyscreen.notify_confirm(
+                    'Need at least two accounts for a valid ledger transaction.',
+                    form_color='WARNING'
+                )
+            check_passed = False
+        if self.parentApp.tmpTrans.check()['cannot_balance']:
+            if message:
+                npyscreen.notify_confirm(
+                    'Only one account may have no amount!',
+                    form_color='WARNING'
+                )
+            check_passed = False
+
+        return check_passed
+
     def on_ok(self, keypress=None):
         """Press ok."""
-        self.values_to_tmp()
+        if self.values_to_tmp():
 
-        # switch to transaction check form
-        self.parentApp.setNextForm('TransactionCheck')
-        self.parentApp.switchFormNow()
+            # switch to transaction check form
+            self.parentApp.setNextForm('TransactionCheck')
+            self.parentApp.switchFormNow()
 
     def on_cancel(self, keypress=None):
         """Press cancel - exit programm."""

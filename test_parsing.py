@@ -1,12 +1,12 @@
 """Test the parser with test journals."""
 
 from datetime import datetime
-import ledgerparse
+from general.ledgerparse import Journal
 
 
 def test_parse_test_journal():
     """Parse a test journal."""
-    journal = ledgerparse.Journal(journal_file='index.journal')
-    print(journal.balance(account='.*konto'))
+    journal = Journal(journal_file='test.journal')
+    print(journal.to_str())
 
 test_parse_test_journal()

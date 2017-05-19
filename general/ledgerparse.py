@@ -272,13 +272,26 @@ class Journal(object):
         if sort_date:
             transactions = sorted(
                 [t for t in self._transactions],
-                key=lambda x: x.date
+                key=lambda x: x._date
             )
         else:
             transactions = [t for t in self._transactions]
 
+        # get times
+        if sort_date:
+            times = sorted(
+                [t for t in self._times],
+                key=lambda x: x._start
+            )
+        else:
+            times = [t for t in self._times]
+
         # append all the transactions
         output += '\n\n'.join([t.to_str(alias=alias) for t in transactions])
+
+        # append all the times
+        if len(times) > 0:
+            output += '\n\n' + '\n\n'.join([t.to_str(alias=alias) for t in times])
 
         return output
 
@@ -306,7 +319,7 @@ class Journal(object):
         if not self._is_time:
             return [
                 p for t in self._transactions for p in t._postings if
-                re.match(state, t.state) and
+                re.match(state, t._state) and
                 re.match(code, t.code) and
                 re.match(payee, t.payee) and
                 re.match(comment, str(t.get_comments())) and
@@ -324,14 +337,10 @@ class Journal(object):
         """Return list with transactions with the given search arguments."""
         if not self._is_time:
             # it's financial
-            return set(
-                [p.trans() for p in self.posts(*args, **kwargs)]
-            )
+            return list(set([p.trans() for p in self.posts(*args, **kwargs)]))
         else:
             # it's time
-            return set(
-                [p for p in self.posts(*args, **kwargs)]
-            )
+            return [p for p in self.posts(*args, **kwargs)]
 
     def balance(self, account=None):
         """
@@ -497,11 +506,6 @@ class Transaction(object):
                 is_trans = False
                 self.add_posting(posting_string=line)
 
-        # raise an error if there are more than one no_amount account in the accounts
-        if len([a for a in self._postings if a._no_amount]) > 1:
-            print('Accounts cannot balance. No valid ledger format!')
-            exit()
-
     def _to_transaction_string(self):
         """Convert given variables to the _transaction_string."""
         self.transaction_string = self.to_str()
@@ -602,8 +606,35 @@ class Transaction(object):
         """Get state."""
         return self._state
 
+    def check(self):
+        """
+        Return a check, if something is missing.
+
+        Possible checks are:
+            check['need_more_accounts'] = True|False
+            check['cannot_balance'] = True|False
+        """
+        out = {}
+
+        out['need_more_accounts'] = len(
+            [p for p in self._postings if p.account != '']
+        ) < 2
+
+        out['cannot_balance'] = len(
+            [p for p in self._postings if p._no_amount and p.account != '']
+        ) > 1
+
+        return out
+
     def to_str(self, alias=False):
         """Convert attributes to readable ledger transaction string."""
+        # return empty string, if check fails
+        if (
+            self.check()['need_more_accounts'] or
+            self.check()['cannot_balance']
+        ):
+            return ''
+
         # get date
         tmp_date = self._date.strftime(
             '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
@@ -613,7 +644,7 @@ class Transaction(object):
         tmp_aux_date = (
             '=' + self._aux_date.strftime(
                 '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
-            ) if self._aux_date != self._date else ''
+            ) if self._aux_date.date() != self._date.date() else ''
         )
 
         # get state
@@ -631,12 +662,14 @@ class Transaction(object):
         else:
             tmp_comments = ''
 
-        # get accounts with its comments
-        tmp_accounts = '\n' + '\n'.join([x.to_str(alias=alias) for x in self._postings])
+        # get postings with its comments - but only with given account
+        tmp_postings = '\n' + '\n'.join(
+            [p.to_str(alias=alias) for p in self._postings if p.account != '']
+        )
 
         return (
             tmp_date + tmp_aux_date + tmp_state + tmp_code + tmp_payee + tmp_comments +
-            tmp_accounts
+            tmp_postings
         )
 
     def balance(self, account=None):
@@ -682,15 +715,18 @@ class Posting(object):
 
         self.account = str(account)
         self.commodity = '€' if commodity is None else str(commodity)
-        self.set_no_amount(
-            True if no_amount is None else no_amount
-        )
+
+        # handle not_amount
+        self.set_no_amount(no_amount)
+        if amount is None or amount == '':
+            self.set_no_amount(True)
+
         self._amount = Decimal('0.00')
         self.set_amount(amount)
 
         # regex
         self.re_posting = re.compile(
-            # the account with one leading whitespace and following two whitespaces
+            # the posting with one leading whitespace and following two whitespaces
             r'[^\S\n\r]{1,}(?P<account>[^;].+)(?:[^\S\n\r]{2,})'
             # commodity which is no number and one following whitespace or nothing
             r'(?:(?P<commodity_front>[^\d].*)[^\S\n\r]{1,})?'
@@ -708,13 +744,13 @@ class Posting(object):
         # init methods
         # fill from string, if it's given
         if self.posting_string is not None:
-            self._to_postings()
+            self._to_posting()
 
         # otherwise assume other values are given and we need the account_string
         else:
             self._to_postings_string()
 
-    def _to_postings(self, posting_string=None):
+    def _to_posting(self, posting_string=None):
         """Convert the posting_string to a ledger posting object."""
         if posting_string is None:
             posting_string = self.posting_string
@@ -725,7 +761,6 @@ class Posting(object):
 
         # what is the match?
         if m_posting:
-
             # get its account name
             self.account = m_posting.group('account')
 
@@ -748,13 +783,13 @@ class Posting(object):
                 # only get rid of thousand separator
                 tmp_amount = m_posting.group('amount').replace(',', '')
 
+            # toggle no_amonut to False
+            self._no_amount = False
+
             self.set_amount(tmp_amount)
 
         # it's an posting without amount
         elif m_posting_only:
-            # it' a no_amount posting
-            self._no_amount = True
-
             # get its name
             self.account = m_posting_only.group('account')
 
@@ -763,6 +798,9 @@ class Posting(object):
 
             # get the amount
             self.set_amount('0.00')
+
+            # get no_amount
+            self.set_no_amount(True)
 
     def _to_postings_string(self):
         """Get posting_string from data."""
@@ -802,9 +840,8 @@ class Posting(object):
     def set_amount(self, value):
         """Set amount."""
         try:
+            # try to convert it to a Decimal
             self._amount = Decimal(str(value).replace(self.dec_sep, '.'))
-            if self._amount > 0:
-                self._no_amount = False
         except Exception:
             pass
 
@@ -841,13 +878,40 @@ class Posting(object):
         # get the account name
         tmp_name = self.replace_alias(self.account) if alias else self.account
 
-        # get the commodity
-        tmp_commodity = '  {} '.format(self.commodity) if self.commodity else ''
+        # empty if no_amount
+        if self._no_amount:
+            tmp_commodity = ''
+            tmp_amount = ''
 
-        # get amount
-        tmp_amount = (
-            str(self._amount).replace('.', self.dec_sep) if self._amount != 0 else ''
-        )
+        # not empty
+        else:
+            # get the commodity
+            tmp_commodity = '  {} '.format(self.commodity) if self.commodity else ''
+
+            """
+            Following block will add one or two zeros after the decimal separator,
+            if zeros are missing, but it won't add zeros, of the decimal number
+            already has two or more digits. So:
+            0 will become 0.00
+            0.0 will beomce 0.00
+            but 0.00 will stay 0.00
+            and 0.000 will stay 0.000
+            """
+            amount = str(self._amount)
+            if len(amount.split('.')) > 1:
+                amt_int = amount.split('.')[0]
+                amt_dec = amount.split('.')[1]
+                add_zeros = '0' * (2 - len(amount.split('.')[1]))
+                amt_dec += add_zeros
+            else:
+                amt_int = amount
+                amt_dec = '00'
+
+            tmp_amount = '{}{}{}'.format(
+                amt_int,
+                self.dec_sep,
+                amt_dec
+            )
 
         # get comments
         tmp_comments = (

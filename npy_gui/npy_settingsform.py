@@ -182,6 +182,11 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             name='Data path:',
             begin_entry_at=26
         )
+        self.ledger_path = self.add_widget_intelligent(
+            npyscreen.TitleFilenameCombo,
+            name='Ledger path:',
+            begin_entry_at=26
+        )
         self.def_state = self.add_widget_intelligent(
             npyscreen.TitleSelectOne,
             name='Default state:',
@@ -278,6 +283,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
     def beforeEditing(self):
         """Get values from settings object."""
         self.data_path.value = self.parentApp.S.data_path
+        self.ledger_path.value = self.parentApp.S.ledger_path
         self.def_state.value = [self.def_state.values.index(self.parentApp.S.def_state)]
         self.def_code.value = self.parentApp.S.def_code
         self.def_payee.value = self.parentApp.S.def_payee
@@ -303,14 +309,16 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         """Do something because user pressed ok."""
         # get values into temp variables
         data_path = self.data_path.value.rstrip('/')
+        ledger_path = self.ledger_path.value.rstrip('/')
 
         # check correctness of values
         data_path_correct = can_be_dir(data_path)
+        ledger_path_correct = can_be_dir(ledger_path)
 
         # dir is not creatable
-        if not data_path_correct:
+        if not data_path_correct or not ledger_path_correct:
             message = npyscreen.notify_ok_cancel(
-                'Data path is no valid folder name! Please change it!',
+                'Data/ledger path is no valid folder name! Please change it!',
                 title='Wrong folder names!',
                 form_color='WARNING'
             )
@@ -328,6 +336,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         else:
             # new values
             self.parentApp.S.data_path = data_path
+            self.parentApp.S.ledger_path = ledger_path
 
             # defaults
             self.parentApp.S.def_state = self.def_state.values[self.def_state.value[0]]
