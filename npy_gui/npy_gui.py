@@ -63,6 +63,7 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
 
         # set global temp variables
         self.tmpTrans = Transaction()
+        self.tmpTransC = Transaction()  # copy of the trans
         self.tmpTrans_new = True
 
         # history for added transactions during runtime of the programm

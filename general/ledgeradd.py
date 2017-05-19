@@ -3,11 +3,19 @@
 
 from datetime import datetime
 import os
-import ledgerparse
+from general.ledgerparse import Transaction
 
 
 # DO I NEED THIS VARIABLE?
 path_to_project = os.path.dirname(os.path.realpath(__file__))
+
+
+class ReplacementDict(dict):
+    """A dict with a __missing__ method."""
+
+    def __missing__(self, key):
+        """Return the key instead."""
+        return '{' + str(key).replace('#', '') + '}'
 
 
 def gen_journal_filename(
@@ -25,7 +33,7 @@ def gen_journal_filename(
         year = datetime.now().strftime('%Y')
 
     # generate the name, if a file for every year is wanted
-    if split_journal_into_years:
+    if split_years_to_files:
         # append the year, if no {year} in filename pattern
         if '{year}' not in ledger_filename:
             filename = ledger_filename.replace('.', '_{}.'.format(year))
@@ -48,3 +56,31 @@ def gen_journal_filename(
 
     # return absolute path to file
     return ledger_path + filename
+
+
+def replace(text=None, trans=None):
+    """Return replaced string."""
+    text = str(text)
+
+    if type(trans) is not Transaction:
+        return text
+
+    # replacer
+    replacer = ReplacementDict()
+
+    # fill the date stuff
+    replacer['YEAR'] = datetime.now().year
+    replacer['MONTH'] = datetime.now().month
+    replacer['DAY'] = datetime.now().day
+    replacer['TRANS_YEAR'] = trans.get_date().year
+    replacer['TRANS_MONTH'] = trans.get_date().month
+    replacer['TRANS_DAY'] = trans.get_date().day
+    replacer['TRANS_AUX_YEAR'] = trans.get_aux_date().year
+    replacer['TRANS_AUX_MONTH'] = trans.get_aux_date().month
+    replacer['TRANS_AUX_DAY'] = trans.get_aux_date().day
+
+    # othe rvalues from transaction
+    replacer['PAYEE'] = trans.payee
+
+    # replace the text
+    return text.format(**replacer)

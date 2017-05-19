@@ -33,11 +33,11 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
     def simple_add(self):
         """Return simple add summary."""
         pager = ['---']
-        pager += self.parentApp.tmpTrans.to_str().split('\n')
+        pager += self.parentApp.tmpTransC.to_str().split('\n')
         pager += ['---']
         pager += ['']
         pager += ['Sum: {}'.format(str(sum(
-            [p.get_amount() for p in self.parentApp.tmpTrans.get_postings()]
+            [p.get_amount() for p in self.parentApp.tmpTransC.get_postings()]
         )))]
         pager += ['']
         pager += ['']
@@ -61,7 +61,7 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
             )
 
         # add the transaction to it
-        self.parentApp.History += self.parentApp.tmpTrans.to_str()
+        self.parentApp.History += self.parentApp.tmpTransC.to_str()
 
     def on_ok(self, keypress=None):
         """Press ok."""

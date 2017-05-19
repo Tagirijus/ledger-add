@@ -1,5 +1,7 @@
 """Form for entering the transaction data."""
 
+from general import ledgeradd
+from general.ledgerparse import Transaction
 import npyscreen
 
 
@@ -235,25 +237,56 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
 
     def values_to_tmp(self, message=True):
         """Store vlaues to temp."""
+        self.parentApp.tmpTransC = Transaction()
+
         self.parentApp.tmpTrans.set_date(self.date.value)
+        self.parentApp.tmpTransC.set_date(self.date.value)
+
         self.parentApp.tmpTrans.set_state(
             self.state.values[self.state.value[0]]
         )
+        self.parentApp.tmpTransC.set_state(
+            self.state.values[self.state.value[0]]
+        )
+
         self.parentApp.tmpTrans.code = self.code.value
+        self.parentApp.tmpTransC.code = self.code.value
+
         self.parentApp.tmpTrans.payee = self.payee.value
+        self.parentApp.tmpTransC.payee = self.payee.value
+
         self.parentApp.tmpTrans.set_comments(
             self.comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.set_comments(
+            ledgeradd.replace(
+                text=self.comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
         )
 
         # clear postigns to add them new from widgets
         self.parentApp.tmpTrans.clear_postings()
+        self.parentApp.tmpTransC.clear_postings()
 
-        # only add the accounts, if an account was set
+        # add accounts and also ad them with replaced values to the copy
         self.parentApp.tmpTrans.add_posting(
             account=self.account_a.value,
             commodity=self.parentApp.S.def_commodity,
             amount=self.account_a_amount.value,
             comments=self.account_a_comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_a.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_a_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_a_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
         )
 
         self.parentApp.tmpTrans.add_posting(
@@ -262,12 +295,36 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             amount=self.account_b_amount.value,
             comments=self.account_b_comments.value.splitlines()
         )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_b.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_b_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_b_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
+        )
 
         self.parentApp.tmpTrans.add_posting(
             account=self.account_c.value,
             commodity=self.parentApp.S.def_commodity,
             amount=self.account_c_amount.value,
             comments=self.account_c_comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_c.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_c_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_c_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
         )
 
         self.parentApp.tmpTrans.add_posting(
@@ -276,12 +333,36 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             amount=self.account_d_amount.value,
             comments=self.account_d_comments.value.splitlines()
         )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_d.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_d_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_d_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
+        )
 
         self.parentApp.tmpTrans.add_posting(
             account=self.account_e.value,
             commodity=self.parentApp.S.def_commodity,
             amount=self.account_e_amount.value,
             comments=self.account_e_comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_e.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_e_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_e_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
         )
 
         # check if accounts are valid for ledger
