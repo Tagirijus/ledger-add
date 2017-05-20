@@ -101,17 +101,23 @@ class Journal(object):
             # otherwise try to load the given file
             else:
                 # get filename
-                include_me = line.replace('include ', '').replace('Include ', '').strip()
+                include_me = os.path.basename(
+                    line.replace('include ', '').replace('Include ', '').strip()
+                ) + '(\n|$)'
 
                 # cycle through the files, if there are some and append their content
                 # also replace wildcard with regex-wildcard
                 regex = include_me.replace('.', '\.').replace('*', '.*')
                 got_a_file = 0
                 for filename in os.listdir(path):
+                    # file found
                     if re.match(regex, filename):
-                        if got_a_file != 0:
+                        # append two newlines, if it's not the first entry
+                        if got_a_file > 0:
                             out += '\n\n'
-                        got_a_file = 1
+                        got_a_file += 1
+
+                        # load the file and append it to the output
                         f = open(os.path.join(path, filename), 'r')
                         out += f.read()
                         f.close()
@@ -204,7 +210,7 @@ class Journal(object):
             aliases = self._aliases
 
         if decimal_sep is None:
-            decimal_sep = self.decimal_sep
+            decimal_sep = self.dec_sep
 
         if date_sep is None:
             date_sep = self.date_sep
@@ -266,7 +272,8 @@ class Journal(object):
         output = ''
 
         # append the non transactions
-        output += self.non_transactions + '\n\n'
+        if self.non_transactions != '':
+            output += self.non_transactions + '\n\n'
 
         # get transactions
         if sort_date:
@@ -369,6 +376,41 @@ class Journal(object):
                     if re.match(account, p.replace_alias(p.account), re.I)
                 ]
             )
+
+    def trans_exists(self, code=None):
+        """Return trans, with the given code."""
+        if code == '':
+            return False
+
+        for t in self._transactions:
+            if t.code == str(code):
+                return t
+
+        return False
+
+    def get_journal_for_year(self, year=None):
+        """
+        Return Journal object holding transactions for given year only.
+
+        When no year is given, it returns a complete copy of the Journal.
+        Otherwise it returns a new Journal holding only the transactions
+        in this specific year.
+        """
+        new_journal = Journal(
+            journal_string=self.to_str()
+        )
+
+        # get simple copy
+        if type(year) is not int:
+            return new_journal
+
+        # get copy with years transactions
+        new_journal._transactions = [
+            t for t in new_journal._transactions
+            if t._date.year == year
+        ]
+
+        return new_journal
 
 
 class Transaction(object):
@@ -615,6 +657,8 @@ class Transaction(object):
             check['cannot_balance'] = True|False
         """
         out = {}
+
+        out['code_exists'] = self.code != ''
 
         out['need_more_accounts'] = len(
             [p for p in self._postings if p.account != '']

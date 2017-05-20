@@ -185,6 +185,9 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
 
     def beforeEditing(self):
         """Get values from temp / settings if new."""
+        # get title for form according to filename
+        self.name = self.parentApp.S.gen_ledger_filename(absolute=True)
+
         # generate transaction from settings defaults, if tmpTrans is new
         if self.parentApp.tmpTrans_new:
             self.parentApp.gen_tmptrans()
@@ -241,6 +244,9 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
 
         self.parentApp.tmpTrans.set_date(self.date.value)
         self.parentApp.tmpTransC.set_date(self.date.value)
+
+        self.parentApp.tmpTrans.set_aux_date(self.date.value)
+        self.parentApp.tmpTransC.set_aux_date(self.date.value)
 
         self.parentApp.tmpTrans.set_state(
             self.state.values[self.state.value[0]]
@@ -366,6 +372,12 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         )
 
         # check if accounts are valid for ledger
+
+        # a code is given - only needed for modify feature
+        if self.parentApp.tmpTrans.check()['code_exists']:
+            return True
+
+        # otherwise check things
         check_passed = True
         if self.parentApp.tmpTrans.check()['need_more_accounts']:
             if message:

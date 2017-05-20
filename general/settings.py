@@ -1,5 +1,7 @@
 """The class holding all the settings."""
 
+import argparse
+from datetime import datetime
 from decimal import Decimal
 import json
 import os
@@ -25,12 +27,44 @@ class Settings(object):
         date_separator=None,
         ledger_file=None,
         split_years_to_files=None,
-        afa_enabled=None,
         afa_threshold_amount=None,
         afa_def_account=None,
         afa_table=None
     ):
         """Initialize the class and hard code defaults, if no file is given."""
+        self.args = argparse.ArgumentParser(
+            description=(
+                'Programm for adding ledger transactions to a ledger journal.'
+            )
+        )
+
+        self.args.add_argument(
+            'file',
+            nargs='?',
+            default=None,
+            help=(
+                'ledger journal - if set, split years feature is set to false by default!'
+            )
+        )
+
+        self.args.add_argument(
+            '-q',
+            '--quiet',
+            action='store_true',
+            help='disables the GUI'
+        )
+
+        self.args.add_argument(
+            '-s',
+            '--split',
+            action='store_true',
+            help='enables split years to files'
+        )
+
+        self.args = self.args.parse_args()
+
+        self._got_arguments = False
+
         self.BASE_PATH = os.path.dirname(os.path.realpath(__file__))[
             :os.path.dirname(os.path.realpath(__file__)).rfind('/')
         ]
@@ -74,16 +108,13 @@ class Settings(object):
 
         # file handling
         self.ledger_file = (
-            'ledger_{year}.journal' if ledger_file is None else ledger_file
+            'ledgeradd_ledger.journal' if ledger_file is None else ledger_file
         )
         self.set_split_years_to_files(
             True if split_years_to_files is None else split_years_to_files
         )
 
         # afa feature
-        self.set_afa_enabled(
-            True if afa_enabled is None else afa_enabled
-        )
         self._afa_threshold_amount = Decimal('487.90')
         self.set_afa_threshold_amount(afa_threshold_amount)
         self.afa_def_account = 'afa' if afa_def_account is None else afa_def_account
@@ -93,6 +124,39 @@ class Settings(object):
         # try to load settings from self.data_path/ledgeradd.settings afterwards
         self.load_settings_from_file()
 
+        # alter it from arguments
+        self._set_from_arguments()
+
+    def _set_from_arguments(self):
+        """Feed own attributes from arguments."""
+        # a file is given in the arguments
+        if self.args.file is not None:
+            # so set this file and also set the split_years... to False
+            self.ledger_file = self.args.file
+            self.ledger_path = os.path.dirname(
+                os.path.abspath(self.args.file)
+            )
+            self._split_years_to_files = False
+
+            # self.args altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.split:
+            self._split_years_to_files = True
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+    @property
+    def ledger_file(self):
+        """Return ledger_file."""
+        return self._ledger_file
+
+    @ledger_file.setter
+    def ledger_file(self, value):
+        """Set ledger_file."""
+        self._ledger_file = value + '.journal' if '.' not in value else value
+
     def set_split_years_to_files(self, value):
         """Set split_years_to_files."""
         self._split_years_to_files = bool(value)
@@ -100,14 +164,6 @@ class Settings(object):
     def get_split_years_to_files(self):
         """Get split_years_to_files."""
         return self._split_years_to_files
-
-    def set_afa_enabled(self, value):
-        """Set afa_enabled."""
-        self._afa_enabled = bool(value)
-
-    def get_afa_enabled(self):
-        """Get afa_enabled."""
-        return self._afa_enabled
 
     def set_afa_threshold_amount(self, value):
         """Set afa_threshold_amount."""
@@ -162,6 +218,30 @@ class Settings(object):
         self._afa_table.pop(index)
         return True
 
+    def gen_ledger_filename(
+        self,
+        absolute=False,
+        year=None,
+        path_only=False
+    ):
+        """Generate ledger filename."""
+        # get settings ledger_file and path
+        filename = self.ledger_file
+        path = self.ledger_path + '/' if (absolute or path_only) else ''
+
+        # return path only, if the argument for it is True
+        if path_only:
+            return path
+
+        if type(year) is not int:
+            year = datetime.now().year
+
+        # generate filename for specific year, if this feature is enabled
+        if self._split_years_to_files:
+            return path + self.ledger_file.replace('.', '_{}.'.format(year))
+        else:
+            return path + self.ledger_file
+
     def to_json(self, indent=2, ensure_ascii=False):
         """Convert settings data to json format."""
         out = {}
@@ -182,7 +262,6 @@ class Settings(object):
         out['date_separator'] = self.date_separator
         out['ledger_file'] = self.ledger_file
         out['split_years_to_files'] = self._split_years_to_files
-        out['afa_enabled'] = self._afa_enabled
         out['afa_threshold_amount'] = float(self._afa_threshold_amount)
         out['afa_def_account'] = self.afa_def_account
         out['afa_table'] = self._afa_table
@@ -253,9 +332,6 @@ class Settings(object):
         if 'split_years_to_files' in js.keys():
             self.set_split_years_to_files(js['split_years_to_files'])
 
-        if 'afa_enabled' in js.keys():
-            self.set_afa_enabled(js['afa_enabled'])
-
         if 'afa_threshold_amount' in js.keys():
             self.set_afa_threshold_amount(js['afa_threshold_amount'])
 
@@ -297,6 +373,10 @@ class Settings(object):
 
     def save_settings_to_file(self):
         """Save the settings to file in data_path."""
+        # do not save, if arguments altered the settings
+        if self._got_arguments:
+            return
+
         # generate data_path if it does not exist
         self.generate_data_path()
 

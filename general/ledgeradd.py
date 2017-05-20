@@ -1,9 +1,12 @@
 """The ledgeradd backend."""
 
 
+import re
 from datetime import datetime
+from general import ledgerparse
+from general.settings import Settings
 import os
-from general.ledgerparse import Transaction
+import shutil
 
 
 # DO I NEED THIS VARIABLE?
@@ -18,51 +21,120 @@ class ReplacementDict(dict):
         return '{' + str(key).replace('#', '') + '}'
 
 
-def gen_journal_filename(
-    ledger_path='',
-    ledger_filename='ledgeradd_ledger.journal',
-    year=None,
-    split_years_to_files=True
+def load_journal(
+    settings=None
 ):
-    """Generate the absolute path to the ledger journal file."""
-    # get the year
-    try:
-        year = int(year)
-        year = str(year)
-    except Exception:
-        year = datetime.now().strftime('%Y')
+    """Load the journal object."""
+    # cancel if no valid settings file is given
+    if type(settings) is not Settings:
+        return False
 
-    # generate the name, if a file for every year is wanted
-    if split_years_to_files:
-        # append the year, if no {year} in filename pattern
-        if '{year}' not in ledger_filename:
-            filename = ledger_filename.replace('.', '_{}.'.format(year))
+    # get filenames and paths etc
+    path = settings.gen_ledger_filename(path_only=True)
+    absolute = settings.gen_ledger_filename(absolute=True)
 
-        # {year} exists in pattern, replace it with the year
-        else:
-            filename = ledger_filename.format(year=year)
+    # simply load the given file, if split files it False
+    if not settings.get_split_years_to_files():
+        return ledgerparse.Journal(journal_file=absolute)
 
-    # no year splitting enabled, use the pattern instead
+    # otherwise: iter through the files accordingly
+    # and create a temporary ledger file, which includes the others
+    # wrtie them as "include [FILE]" into a temp ledger journal and load this
+    # and remove it afterwards
+    # crappy solution for my problem
+
+    # first init the absolute filename list
+    files = set()
+
+    # generate the regex to search in the path
+    regex = re.compile(settings.ledger_file.replace('.', '_.*\.'))
+
+    # iter through the files
+    for f in os.listdir(path):
+
+        # and append fitting files to the list
+        if regex.match(f):
+            files |= set([os.path.abspath(regex.match(f).group())])
+
+    # create content of temp ledger journal
+    content = ''
+    for f in files:
+        content += 'include {}\n'.format(f)
+
+    # create a temp ledger journal file
+    f = open(path + 'TEMP_LEDGER_JOURNAL.journal', 'w')
+    f.write(content)
+    f.close()
+
+    # load this journal now
+    out_journal = ledgerparse.Journal(
+        journal_file=path + 'TEMP_LEDGER_JOURNAL.journal'
+    )
+
+    # delete the temp file
+    os.remove(path + 'TEMP_LEDGER_JOURNAL.journal')
+
+    # output the journal
+    return out_journal
+
+
+def save_journal(
+    filename=None,
+    settings=None,
+    journal=None,
+    year=None
+):
+    """Save the journal object."""
+    # cancel if there is one wrong important argument given
+    is_settings = type(settings) is Settings
+    is_journal = type(journal) is ledgerparse.Journal
+
+    if not is_settings or not is_journal:
+        return False
+
+    # get actual year, if nothing is set
+    if year is None:
+        year = datetime.now().year
+
+    # get filenames and paths etc
+    absolute = settings.gen_ledger_filename(
+        absolute=True,
+        year=year
+    )
+
+    # save a backup, if file already exists
+    if os.path.isfile(absolute):
+        shutil.copy2(absolute, absolute + '_bu')
+
+    # simply save the given transaction to one journal, if split files it False
+    if not settings.get_split_years_to_files():
+
+        # write journal to file
+        f = open(absolute, 'w')
+        f.write(journal.to_str(sort_date=True))
+        f.close()
+
+        return True
+
+    # or to the years journal
     else:
-        filename = ledger_filename
 
-    # return path to relative file, if no path is given
-    if ledger_path == '':
-        return filename
+        # write journal to file
+        f = open(absolute, 'w')
+        f.write(journal.get_journal_for_year(year=year).to_str(sort_date=True))
+        f.close()
 
-    # check if path ends with /
-    if ledger_path[-1:] != '/':
-        ledger_path += '/'
+        return True
 
-    # return absolute path to file
-    return ledger_path + filename
+    # if anything should go wrong, return False
+    return False
 
 
 def replace(text=None, trans=None):
     """Return replaced string."""
     text = str(text)
 
-    if type(trans) is not Transaction:
+    if type(trans) is not ledgerparse.Transaction:
         return text
 
     # replacer

@@ -6,37 +6,22 @@ You can add manually or save and load presets.
 Author: Manuel Senfft (www.tagirijus.de)
 """
 
-import argparse
+from general.settings import Settings
 from npy_gui import npy_gui
 
 
 def main():
-    """Run the programm with the npyscreen GUI."""
-    args = argparse.ArgumentParser(
-        description=(
-            'Programm for adding ledger transactions to a ledger journal.'
-        )
-    )
+    """Run the programm."""
+    # load the settings
+    settings = Settings()
 
-    args.add_argument(
-        'file',
-        nargs='?',
-        default=None,
-        help='ledger journal'
-    )
+    # start the GUI
+    if not settings.args.quiet:
+        app = npy_gui.LedgeraddApplication(settings=settings)
+        app.run()
 
-    # args.add_argument(
-    #     '-s',
-    #     '--short',
-    #     type=int,
-    #     default=12345,
-    #     help='Simple integer argument'
-    # )
-
-    args = args.parse_args()
-
-    app = npy_gui.LedgeraddApplication(arguments=args)
-    app.run()
+    # start the non-GUI version
+    pass
 
 if __name__ == '__main__':
     main()
