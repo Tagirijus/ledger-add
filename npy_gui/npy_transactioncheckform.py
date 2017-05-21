@@ -105,20 +105,33 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
 
     def beforeEditing(self):
         """Get values from temp."""
-        # first load the journal
+        # code modifying search feature
+        if self.parentApp.tmpTransC.code != '':
+            # check last year and search for the code
+            self.journal = ledgeradd.load_journal(
+                settings=self.parentApp.S,
+                year=self.parentApp.tmpTransC.get_date().year - 1
+            )
+            if self.journal.trans_exists(code=self.parentApp.tmpTransC.code):
+                self.check_me.values = self.trans_modify()
+                return
+
+            # load actual year and search for the code
+            self.journal = ledgeradd.load_journal(
+                settings=self.parentApp.S,
+                year=self.parentApp.tmpTransC.get_date().year
+            )
+            if self.journal.trans_exists(code=self.parentApp.tmpTransC.code):
+                self.check_me.values = self.trans_modify()
+                return
+
+        # else it's just adding (to the actual year)
         self.journal = ledgeradd.load_journal(
-            settings=self.parentApp.S
+            settings=self.parentApp.S,
+            year=self.parentApp.tmpTransC.get_date().year
         )
+        self.check_me.values = self.trans_add()
 
-        # check if entered transactions code and payee exist (will go into modify mode)
-        if self.journal.trans_exists(code=self.parentApp.tmpTransC.code):
-            pager = self.trans_modify()
-
-        else:
-            pager = self.trans_add()
-
-        # get the values as ledger string and put them into the pager
-        self.check_me.values = (pager)
 
     def add_history(self):
         """Add transaction to the history."""

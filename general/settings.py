@@ -83,8 +83,14 @@ class Settings(object):
         self.generate_data_path()
 
         # ledger path
-        self.ledger_path = (os.path.expanduser('~') + '/.tagirijus_ledgeradd/ledger'
-                            if ledger_path is None else ledger_path)
+        ledger_path_default = (
+            os.environ['LEDGER_FILE_PATH'] if 'LEDGER_FILE_PATH' in os.environ
+            else self.data_path + '/ledger_journals'
+        )
+        self.ledger_path = (
+            ledger_path_default
+            if ledger_path is None else ledger_path
+        )
 
         # generate ledger path, if it does not exist
         self.generate_ledger_path()
@@ -107,8 +113,12 @@ class Settings(object):
         self.date_separator = '-' if date_separator is None else date_separator
 
         # file handling
+        ledger_file_default = (
+            os.environ['LEDGER_FILE'] if 'LEDGER_FILE' in os.environ
+            else 'ledgeradd_ledger.journal'
+        )
         self.ledger_file = (
-            'ledgeradd_ledger.journal' if ledger_file is None else ledger_file
+            ledger_file_default if ledger_file is None else ledger_file
         )
         self.set_split_years_to_files(
             True if split_years_to_files is None else split_years_to_files
@@ -225,8 +235,7 @@ class Settings(object):
         path_only=False
     ):
         """Generate ledger filename."""
-        # get settings ledger_file and path
-        filename = self.ledger_file
+        # get settings ledger_path
         path = self.ledger_path + '/' if (absolute or path_only) else ''
 
         # return path only, if the argument for it is True

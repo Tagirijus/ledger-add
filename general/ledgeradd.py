@@ -22,64 +22,31 @@ class ReplacementDict(dict):
 
 
 def load_journal(
-    settings=None
+    settings=None,
+    year=None
 ):
     """Load the journal object."""
-    # cancel if no valid settings file is given
-    if type(settings) is not Settings:
+    # cancel if there is one wrong important argument given
+    is_settings = type(settings) is Settings
+
+    if not is_settings:
         return False
 
+    # get actual year, if nothing is set
+    if year is None:
+        year = datetime.now().year
+
     # get filenames and paths etc
-    path = settings.gen_ledger_filename(path_only=True)
-    absolute = settings.gen_ledger_filename(absolute=True)
-
-    # simply load the given file, if split files it False
-    if not settings.get_split_years_to_files():
-        return ledgerparse.Journal(journal_file=absolute)
-
-    # otherwise: iter through the files accordingly
-    # and create a temporary ledger file, which includes the others
-    # wrtie them as "include [FILE]" into a temp ledger journal and load this
-    # and remove it afterwards
-    # crappy solution for my problem
-
-    # first init the absolute filename list
-    files = set()
-
-    # generate the regex to search in the path
-    regex = re.compile(settings.ledger_file.replace('.', '_.*\.'))
-
-    # iter through the files
-    for f in os.listdir(path):
-
-        # and append fitting files to the list
-        if regex.match(f):
-            files |= set([os.path.abspath(regex.match(f).group())])
-
-    # create content of temp ledger journal
-    content = ''
-    for f in files:
-        content += 'include {}\n'.format(f)
-
-    # create a temp ledger journal file
-    f = open(path + 'TEMP_LEDGER_JOURNAL.journal', 'w')
-    f.write(content)
-    f.close()
-
-    # load this journal now
-    out_journal = ledgerparse.Journal(
-        journal_file=path + 'TEMP_LEDGER_JOURNAL.journal'
+    absolute = settings.gen_ledger_filename(
+        absolute=True,
+        year=year
     )
 
-    # delete the temp file
-    os.remove(path + 'TEMP_LEDGER_JOURNAL.journal')
-
-    # output the journal
-    return out_journal
+    # simply load the given file
+    return ledgerparse.Journal(journal_file=absolute)
 
 
 def save_journal(
-    filename=None,
     settings=None,
     journal=None,
     year=None

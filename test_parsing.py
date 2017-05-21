@@ -21,4 +21,4 @@ def test_get_journal_for_year():
     assert len(new_j.get_transactions()) == 3
     print(new_j.to_str())
 
-test_get_journal_for_year()
+test_parse_test_journal()

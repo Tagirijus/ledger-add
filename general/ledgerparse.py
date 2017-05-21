@@ -67,12 +67,12 @@ class Journal(object):
         # regex
         self.re_transaction = re.compile(
             # 4 digits in the beginning, and stuff with leading whitespace after newline
-            r'(\d{4,}.+(?:\n[^\S\n\r]{1,}.+)+)'
+            r'(\d{4,}.+(?:\n[ ]+.+)+)'
         )
 
         self.re_time = re.compile(
             # starts with i, ends with o + stuff
-            r'(i[^\S\n\r]{1,}.+\no.+)'
+            r'(i[ ]+.+\no.+)'
         )
 
         # init methods
@@ -122,8 +122,8 @@ class Journal(object):
                         out += f.read()
                         f.close()
 
-                # newline at the end of the found "include ..." if there is one
-                out += '\n' if '\n' in line else ''
+                # newlines at the end of the found "include ..." if there is one
+                out += '\n\n' if '\n' in line else ''
 
         return out
 
@@ -453,20 +453,20 @@ class Transaction(object):
         # regex
         self.re_transaction_data = re.compile(
             # 4 digit year, 2 digit month and 2 digit day
-            r'(?P<year>\d{4})[/|-](?P<month>\d{2})[/|-](?P<day>\d{2})'
+            r'^(?P<year>\d{4})[/|-](?P<month>\d{2})[/|-](?P<day>\d{2})'
             # same for aux_date, but with leading '=' or nothing
             r'(?:=(?P<year_aux>\d{4})[/|-](?P<month_aux>\d{2})[/|-](?P<day_aux>\d{2}))?'
             # leading whitespace with * or ! or only whitespace
-            r'[^\S\n\r]{1,}(?P<state>[\*|!])?'
+            r'[ ]+(?P<state>[\*|!])?'
             # leading white space + code inside '()' + whitespace or only withespace
-            r'[^\S\n\r]{1,}?(\((?P<code>[^\)].+)\)[^\S\n\r]{1,})?'
+            r'[ ]+?(\((?P<code>[^\)].+)\)[ ]+)?'
             # string for payee
             r'(?P<payee>.+)'
         )
 
         self.re_comment = re.compile(
             # string with leading whitespace and ';'
-            r'[^\S\n\r]{1,};(.+)'
+            r'^[ ]+;(.+)'
         )
 
         # init methods
@@ -770,19 +770,20 @@ class Posting(object):
 
         # regex
         self.re_posting = re.compile(
-            # the posting with one leading whitespace and following two whitespaces
-            r'[^\S\n\r]{1,}(?P<account>[^;].+)(?:[^\S\n\r]{2,})'
+            # start of string, whitespace, characters but ";", few as possible
+            # till two whitespaces or more
+            r'^[ ]+(?P<account>[^\;]+?)[ ]{2,}'
             # commodity which is no number and one following whitespace or nothing
-            r'(?:(?P<commodity_front>[^\d].*)[^\S\n\r]{1,})?'
+            r'(?:(?P<commodity_front>\D+?)[ ]+)?'
             # the amount with +/- or not and a number with ',' or '.' as seperators
             r'(?P<amount>[-+]?\d+(?:[,|\.]?\d+)?)?'
             # commodity or not which is no number and one leading whitespace
-            r'(?:[^\S\n\r]{1,}(?P<commodity_back>[^\d].+))?'
+            r'(?:[ ]+(?P<commodity_back>\D+?))?'
         )
 
         self.re_posting_only = re.compile(
             # the account with one leading whitespace
-            r'[^\S\n\r]{1,}(?P<account>[^;].+)'
+            r'^[ ]+(?P<account>[^;]+)'
         )
 
         # init methods
@@ -999,17 +1000,17 @@ class Time(object):
         # regex
         self.re_time_data = re.compile(
             # starts with i + whitspace
-            r'i[^\S\n\r]{1,}'
+            r'i[ ]+'
             # 4 digit year + sep + 2 digit month + sep + 2 digit day + whitespace
-            r'(?P<s_year>\d{4})[/|-](?P<s_month>\d{2})[/|-](?P<s_day>\d{2})[^\S\n\r]{1,}'
+            r'(?P<s_year>\d{4})[/|-](?P<s_month>\d{2})[/|-](?P<s_day>\d{2})[ ]+'
             # 2 digit hour + : + 2 digit minute + : + 2 digit second + whitespace
-            r'(?P<s_hour>\d{2}):(?P<s_minute>\d{2}):(?P<s_second>\d{2})[^\S\n\r]{1,}'
+            r'(?P<s_hour>\d{2}):(?P<s_minute>\d{2}):(?P<s_second>\d{2})[ ]+'
             # account string till end of line
             r'(?P<account>.+)[\S\n\r]'
             # starts with o + whitespace
-            r'o[^\S\n\r]{1,}'
+            r'o[ ]+'
             # 4 digit year + sep + 2 digit month + sep + 2 digit day + whitespace
-            r'(?P<e_year>\d{4})[/|-](?P<e_month>\d{2})[/|-](?P<e_day>\d{2})[^\S\n\r]{1,}'
+            r'(?P<e_year>\d{4})[/|-](?P<e_month>\d{2})[/|-](?P<e_day>\d{2})[ ]+'
             # 2 digit hour + : + 2 digit minute + : + 2 digit second
             r'(?P<e_hour>\d{2}):(?P<e_minute>\d{2}):(?P<e_second>\d{2})'
         )
