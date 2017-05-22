@@ -50,6 +50,8 @@ class Journal(object):
         self.dec_sep = ',' if decimal_sep is None else decimal_sep
         self.date_sep = '-' if date_sep is None else date_sep
 
+        self.journal_file = journal_file
+
         # no file is given, but a string
         if journal_file is None and journal_string is not None:
             self.journal_string = journal_string

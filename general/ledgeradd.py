@@ -177,6 +177,150 @@ def default_transaction(settings=None):
 
     return trans
 
+def trans_add(settings=None, journal=None, transaction=None):
+    """Add transaction to journal and generate infotext."""
+    is_settings = type(settings) is Settings
+    is_journal = type(journal) is ledgerparse.Journal
+    is_trans = type(transaction) is ledgerparse.Transaction
+
+    # cancel if one object is wrong
+    if not is_settings or not is_journal or not is_trans:
+        return 'Invalid arguments given in trans_add()!'
+
+    # add transaction
+    journal.add_transaction(
+        transaction_string=transaction.to_str()
+    )
+
+    infotext = '---\n'
+    infotext += transaction.to_str()
+    infotext += '\n---\n'
+    infotext += '\n'
+    infotext += 'Money flow: {}\n'.format(str(sum(
+        [
+            p.balance() for p in transaction.get_postings()
+            if p.balance() > 0
+        ]
+    )))
+    infotext += '\n\n'
+    infotext += 'Add this transaction to the journal?\n'
+
+    return infotext
+
+
+def trans_modify(settings=None, journal=None, transaction=None):
+    """Return modify transaction and return infotext."""
+    is_settings = type(settings) is Settings
+    is_journal = type(journal) is ledgerparse.Journal
+    is_trans = type(transaction) is ledgerparse.Transaction
+
+    # cancel if one object is wrong
+    if not is_settings or not is_journal or not is_trans:
+        return 'Invalid arguments given in trans_modify()!'
+
+    # get original transaction
+    trans = journal.trans_exists(code=transaction.code)
+
+    # get aux date from actual transaction
+    trans.set_aux_date(transaction.get_date())
+
+    # check if cleared and add extra warning
+    is_cleared = trans.get_state() == '*'
+
+    # clear it
+    trans.set_state('*')
+
+    # "fill" original transaction back
+    transaction = trans
+
+    infotext = '---\n'
+    infotext += transaction.to_str()
+    infotext += '\n---\n'
+    infotext += '\n'
+    infotext += 'Money flow: {}\n'.format(str(sum(
+        [
+            p.balance() for p in transaction.get_postings()
+            if p.balance() > 0
+        ]
+    )))
+    infotext += '\n\n'
+    infotext += 'Modify this transaction from the journal?\n'
+
+    if is_cleared:
+        infotext += '\n'
+        infotext += (
+            'Attention: transaction is already cleared. '
+            'Would just change the date now!\n'
+        )
+
+    return infotext
+
+
+def check_trans_in_journal(settings=None, journal=None, transaction=None):
+    """
+    Modify journal with transaction and return tuple.
+
+    Tuple looks like this:
+        (infotext, journal, transaction)
+    """
+    is_settings = type(settings) is Settings
+    is_journal = type(journal) is ledgerparse.Journal
+    is_trans = type(transaction) is ledgerparse.Transaction
+
+    # cancel if one object is wrong
+    if not is_settings or not is_journal or not is_trans:
+        return (
+            'Invalid arguments given in check_trans_in_journal()!',
+            ledgerparse.Journal(journal_string=''),
+            ledgerparse.Transaction(transaction_string='')
+        )
+
+    # beginn checking the transaction in the last year and actual year according
+    # to the transactions date
+
+    # first check, if a code is given
+    if transaction.code != '':
+
+        # check last year and search for the code
+        journal = load_journal(
+            settings=settings,
+            year=transaction.get_date().year - 1
+        )
+        if journal.trans_exists(code=transaction.code):
+            infotext = trans_modify(
+                settings=settings,
+                journal=journal,
+                transaction=transaction
+            )
+            return (infotext, journal, transaction)
+
+        # load actual year and search for the code
+        journal = load_journal(
+            settings=settings,
+            year=transaction.get_date().year
+        )
+        if journal.trans_exists(code=transaction.code):
+            infotext = trans_modify(
+                settings=settings,
+                journal=journal,
+                transaction=transaction
+            )
+            return (infotext, journal, transaction)
+
+    # else it's just adding (to the actual year)
+    journal = load_journal(
+        settings=settings,
+        year=transaction.get_date().year
+    )
+
+    infotext = trans_add(
+        settings=settings,
+        journal=journal,
+        transaction=transaction
+    )
+
+    return (infotext, journal, transaction)
+
 
 def non_gui_application(settings=None):
     """Start the non-GUI application of ledgeradd."""

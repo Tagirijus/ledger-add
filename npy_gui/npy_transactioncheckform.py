@@ -1,5 +1,6 @@
 """Form for entering the transaction data."""
 
+from general.ledgerparse import Journal
 from general import ledgeradd
 import npyscreen
 
@@ -17,7 +18,7 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
             '^Q': self.on_cancel
         })
 
-        self.journal = None
+        self.journal = Journal(journal_string='')
 
     def exit(self):
         """Exit the programm."""
@@ -33,104 +34,32 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
         self.check_me = self.add(npyscreen.Pager)
         self.check_me.autowrap = True
 
-    def trans_add(self):
-        """Add to journal and generate ask text."""
-        # get title for form according to filename
-        self.name = self.parentApp.S.gen_ledger_filename(
-            absolute=True,
-            year=self.parentApp.tmpTransC.get_date().year
-        ) + ' - CHECK'
-
-        # add transaction
-        self.journal.add_transaction(
-            transaction_string=self.parentApp.tmpTransC.to_str()
-        )
-
-        pager = ['---']
-        pager += self.parentApp.tmpTransC.to_str().split('\n')
-        pager += ['---']
-        pager += ['']
-        pager += ['Sum: {}'.format(str(sum(
-            [p.get_amount() for p in self.parentApp.tmpTransC.get_postings()]
-        )))]
-        pager += ['']
-        pager += ['']
-        pager += ['Add this transaction to the journal?']
-
-        return pager
-
-    def trans_modify(self):
-        """Return modify summary."""
-        # get original transaction
-        trans = self.journal.trans_exists(code=self.parentApp.tmpTransC.code)
-
-        # get title for form according to filename
-        self.name = self.parentApp.S.gen_ledger_filename(
-            absolute=True,
-            year=trans.get_date().year
-        ) + ' - CHECK'
-
-        # get aux date from actual transaction
-        trans.set_aux_date(self.parentApp.tmpTransC.get_date())
-
-        # check if cleared and add extra warning
-        is_cleared = trans.get_state() == '*'
-
-        # clear it
-        trans.set_state('*')
-
-        # fill tmp again
-        self.parentApp.tmpTransC = trans
-
-        pager = ['---']
-        pager += self.parentApp.tmpTransC.to_str().split('\n')
-        pager += ['---']
-        pager += ['']
-        pager += ['Sum: {}'.format(str(sum(
-            [p.get_amount() for p in self.parentApp.tmpTransC.get_postings()]
-        )))]
-        pager += ['']
-        pager += ['']
-        pager += ['Modify this transaction from the journal?']
-
-        if is_cleared:
-            pager += ['']
-            pager += [
-                'Attention: transaction is already cleared. '
-                'Would just change the date now!'
-            ]
-            self.color = 'DANGER'
-
-        return pager
-
     def beforeEditing(self):
-        """Get values from temp."""
-        # code modifying search feature
-        if self.parentApp.tmpTransC.code != '':
-            # check last year and search for the code
-            self.journal = ledgeradd.load_journal(
+        """Check transaction and journal and stuff."""
+        infotext, self.journal, self.parentApp.tmpTransC = (
+            ledgeradd.check_trans_in_journal(
                 settings=self.parentApp.S,
-                year=self.parentApp.tmpTransC.get_date().year - 1
+                journal=self.journal,
+                transaction=self.parentApp.tmpTransC
             )
-            if self.journal.trans_exists(code=self.parentApp.tmpTransC.code):
-                self.check_me.values = self.trans_modify()
-                return
-
-            # load actual year and search for the code
-            self.journal = ledgeradd.load_journal(
-                settings=self.parentApp.S,
-                year=self.parentApp.tmpTransC.get_date().year
-            )
-            if self.journal.trans_exists(code=self.parentApp.tmpTransC.code):
-                self.check_me.values = self.trans_modify()
-                return
-
-        # else it's just adding (to the actual year)
-        self.journal = ledgeradd.load_journal(
-            settings=self.parentApp.S,
-            year=self.parentApp.tmpTransC.get_date().year
         )
-        self.check_me.values = self.trans_add()
+
+        npyscreen.notify_confirm(
+            str(self.journal.to_str())
+        )
+
+        # set form title, color and infotext
+        self.name = self.parentApp.S.gen_ledger_filename(
+            absolute=True,
+            year=self.parentApp.tmpTransC.get_date().year
+        ) + ' - CHECK'
+
+        if 'transaction is already cleared' in infotext:
+            self.color = 'DANGER'
+        else:
+            self.color = 'WARNING'
+
+        self.check_me.values = infotext.split('\n')
 
 
     def add_history(self):
