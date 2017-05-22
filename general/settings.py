@@ -114,105 +114,105 @@ class Settings(object):
             '-A',
             '--account-A',
             default=None,
-            help='default account A name'
+            help='default account [A|B|C|D|E] name'
+        )
+        self.args.add_argument(
+            '-B',
+            '--account-B',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-C',
+            '--account-C',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-D',
+            '--account-D',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-E',
+            '--account-E',
+            default=None,
+            help='',
+            metavar=''
         )
 
         self.args.add_argument(
             '-Ac',
             '--account-A-comments',
             default=None,
-            help='default account A comments'
+            help='default account [A|B|C|D|E] comments'
+        )
+        self.args.add_argument(
+            '-Bc',
+            '--account-B-comments',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Cc',
+            '--account-C-comments',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Dc',
+            '--account-D-comments',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Ec',
+            '--account-E-comments',
+            default=None,
+            help='',
+            metavar=''
         )
 
         self.args.add_argument(
             '-Aa',
             '--account-A-amount',
             default=None,
-            help='default account A amount'
+            help='default account [A|B|C|D|E] amount'
         )
-
-        self.args.add_argument(
-            '-B',
-            '--account-B',
-            default=None,
-            help='default account B name'
-        )
-
-        self.args.add_argument(
-            '-Bc',
-            '--account-B-comments',
-            default=None,
-            help='default account B comments'
-        )
-
         self.args.add_argument(
             '-Ba',
             '--account-B-amount',
             default=None,
-            help='default account B amount'
+            help='',
+            metavar=''
         )
-
-        self.args.add_argument(
-            '-C',
-            '--account-C',
-            default=None,
-            help='default account C name'
-        )
-
-        self.args.add_argument(
-            '-Cc',
-            '--account-C-comments',
-            default=None,
-            help='default account C comments'
-        )
-
         self.args.add_argument(
             '-Ca',
             '--account-C-amount',
             default=None,
-            help='default account C amount'
+            help='',
+            metavar=''
         )
-
-        self.args.add_argument(
-            '-D',
-            '--account-D',
-            default=None,
-            help='default account D name'
-        )
-
-        self.args.add_argument(
-            '-Dc',
-            '--account-D-comments',
-            default=None,
-            help='default account D comments'
-        )
-
         self.args.add_argument(
             '-Da',
             '--account-D-amount',
             default=None,
-            help='default account D amount'
+            help='',
+            metavar=''
         )
-
-        self.args.add_argument(
-            '-E',
-            '--account-E',
-            default=None,
-            help='default account E name'
-        )
-
-        self.args.add_argument(
-            '-Ec',
-            '--account-E-comments',
-            default=None,
-            help='default account E comments'
-        )
-
         self.args.add_argument(
             '-Ea',
             '--account-E-amount',
             default=None,
-            help='default account E amount'
+            help='',
+            metavar=''
         )
 
         self.args = self.args.parse_args()
