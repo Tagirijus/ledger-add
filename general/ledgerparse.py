@@ -664,9 +664,15 @@ class Transaction(object):
             [p for p in self._postings if p.account != '']
         ) < 2
 
-        out['cannot_balance'] = len(
+        out['cannot_balance_no_amount'] = len(
             [p for p in self._postings if p._no_amount and p.account != '']
         ) > 1
+
+        out['cannot_balance_values'] = self.balance() != 0
+
+        out['cannot_balance'] = (
+            out['cannot_balance_no_amount'] or out['cannot_balance_values']
+        )
 
         return out
 
@@ -718,15 +724,24 @@ class Transaction(object):
 
     def balance(self, account=None):
         """Return account with balanced amount according to other accounts."""
+        # for all accounts
         if account is None:
-            return Decimal('0.00')
+            return sum(
+                [
+                    p.balance() for p in self._postings
+                    if p.account != ''
+                ]
+            )
 
-        return Decimal('0.00') - sum(
-            [
-                p.balance() for p in self._postings
-                if p.account != account
-            ]
-        )
+        # for this account only
+        else:
+            return Decimal('0.00') - sum(
+                [
+                    p.balance() for p in self._postings
+                    if p.account != account and
+                    p.account != ''
+                ]
+            )
 
 
 class Posting(object):
@@ -908,15 +923,15 @@ class Posting(object):
 
     def balance(self):
         """Return account with balanced amount according to other accounts of trans."""
-        if self.no_amount:
+        if self._no_amount:
             return Decimal('0.00') - sum(
                 [
-                    p.amount for p in self._transaction._postings
+                    p._amount for p in self._transaction._postings
                     if p.account != self.account
                 ]
             )
         else:
-            return self.amount
+            return self._amount
 
     def to_str(self, alias=False):
         """Return readable ledger posting string."""

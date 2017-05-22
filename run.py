@@ -6,6 +6,7 @@ You can add manually or save and load presets.
 Author: Manuel Senfft (www.tagirijus.de)
 """
 
+from general import ledgeradd
 from general.settings import Settings
 from npy_gui import npy_gui
 
@@ -21,7 +22,7 @@ def main():
         app.run()
 
     # start the non-GUI version
-    pass
+    ledgeradd.non_gui_application(settings=settings)
 
 if __name__ == '__main__':
     main()

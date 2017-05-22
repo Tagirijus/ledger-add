@@ -412,7 +412,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         if self.parentApp.tmpTrans.check()['cannot_balance']:
             if message:
                 npyscreen.notify_confirm(
-                    'Only one account may have no amount!',
+                    'Cannot balance accounts!',
                     form_color='WARNING'
                 )
             check_passed = False

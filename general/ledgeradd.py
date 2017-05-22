@@ -176,3 +176,14 @@ def default_transaction(settings=None):
     )
 
     return trans
+
+
+def non_gui_application(settings=None):
+    """Start the non-GUI application of ledgeradd."""
+    if type(settings) is not Settings:
+        print('No valid settings file found!')
+        exit()
+
+    # get the transaction
+    trans = default_transaction(settings=settings)
+    print(trans.balance())
