@@ -309,7 +309,9 @@ class Settings(object):
         # settings data
         if self.args.file is not None:
             # so set this file and also set the split_years... to False
-            self.ledger_file = self.args.file
+            self.ledger_file = os.path.basename(
+                self.args.file
+            )
             self.ledger_path = os.path.dirname(
                 os.path.abspath(self.args.file)
             )
