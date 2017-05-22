@@ -16,7 +16,7 @@ def main():
     settings = Settings()
 
     # start the GUI
-    if not settings.args.quiet:
+    if not settings.args.nogui:
         app = npy_gui.LedgeraddApplication(settings=settings)
         app.run()
 

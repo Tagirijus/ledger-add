@@ -48,10 +48,17 @@ class Settings(object):
         )
 
         self.args.add_argument(
-            '-q',
-            '--quiet',
+            '-n',
+            '--nogui',
             action='store_true',
             help='disables the GUI'
+        )
+
+        self.args.add_argument(
+            '-F',
+            '--force',
+            action='store_true',
+            help='forces non-gui version to append/modify transaction - ATTENTION!'
         )
 
         self.args.add_argument(
@@ -59,6 +66,153 @@ class Settings(object):
             '--split',
             action='store_true',
             help='enables split years to files'
+        )
+
+        self.args.add_argument(
+            '-d',
+            '--date',
+            default=None,
+            help='default date with formatting: year-month-day'
+        )
+
+        self.args.add_argument(
+            '-u',
+            '--uncleared',
+            action='store_true',
+            help='sets default transaction to uncleared'
+        )
+
+        self.args.add_argument(
+            '-c',
+            '--code',
+            default=None,
+            help='default code for transaction'
+        )
+
+        self.args.add_argument(
+            '-p',
+            '--payee',
+            default=None,
+            help='default payee for transaction'
+        )
+
+        self.args.add_argument(
+            '-m',
+            '--commodity',
+            default=None,
+            help='default commodity for transaction'
+        )
+
+        self.args.add_argument(
+            '-cm',
+            '--comments',
+            default=None,
+            help='default comments for transaction'
+        )
+
+        self.args.add_argument(
+            '-A',
+            '--account-A',
+            default=None,
+            help='default account A name'
+        )
+
+        self.args.add_argument(
+            '-Ac',
+            '--account-A-comments',
+            default=None,
+            help='default account A comments'
+        )
+
+        self.args.add_argument(
+            '-Aa',
+            '--account-A-amount',
+            default=None,
+            help='default account A amount'
+        )
+
+        self.args.add_argument(
+            '-B',
+            '--account-B',
+            default=None,
+            help='default account B name'
+        )
+
+        self.args.add_argument(
+            '-Bc',
+            '--account-B-comments',
+            default=None,
+            help='default account B comments'
+        )
+
+        self.args.add_argument(
+            '-Ba',
+            '--account-B-amount',
+            default=None,
+            help='default account B amount'
+        )
+
+        self.args.add_argument(
+            '-C',
+            '--account-C',
+            default=None,
+            help='default account C name'
+        )
+
+        self.args.add_argument(
+            '-Cc',
+            '--account-C-comments',
+            default=None,
+            help='default account C comments'
+        )
+
+        self.args.add_argument(
+            '-Ca',
+            '--account-C-amount',
+            default=None,
+            help='default account C amount'
+        )
+
+        self.args.add_argument(
+            '-D',
+            '--account-D',
+            default=None,
+            help='default account D name'
+        )
+
+        self.args.add_argument(
+            '-Dc',
+            '--account-D-comments',
+            default=None,
+            help='default account D comments'
+        )
+
+        self.args.add_argument(
+            '-Da',
+            '--account-D-amount',
+            default=None,
+            help='default account D amount'
+        )
+
+        self.args.add_argument(
+            '-E',
+            '--account-E',
+            default=None,
+            help='default account E name'
+        )
+
+        self.args.add_argument(
+            '-Ec',
+            '--account-E-comments',
+            default=None,
+            help='default account E comments'
+        )
+
+        self.args.add_argument(
+            '-Ea',
+            '--account-E-amount',
+            default=None,
+            help='default account E amount'
         )
 
         self.args = self.args.parse_args()
@@ -102,11 +256,22 @@ class Settings(object):
         self.def_code = '' if def_code is None else def_code
         self.def_payee = '' if def_payee is None else def_payee
         self.def_commodity = '€' if def_commodity is None else def_commodity
+        self.def_comments = None
         self.def_account_a = '' if def_account_a is None else def_account_a
+        self.def_account_a_com = None
+        self.def_account_a_amt = None
         self.def_account_b = '' if def_account_b is None else def_account_b
+        self.def_account_b_com = None
+        self.def_account_b_amt = None
         self.def_account_c = '' if def_account_c is None else def_account_c
+        self.def_account_c_com = None
+        self.def_account_c_amt = None
         self.def_account_d = '' if def_account_d is None else def_account_d
+        self.def_account_d_com = None
+        self.def_account_d_amt = None
         self.def_account_e = '' if def_account_e is None else def_account_e
+        self.def_account_e_com = None
+        self.def_account_e_amt = None
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
@@ -123,6 +288,7 @@ class Settings(object):
         self.set_split_years_to_files(
             True if split_years_to_files is None else split_years_to_files
         )
+        self.date = datetime.now()
 
         # afa feature
         self._afa_threshold_amount = Decimal('487.90')
@@ -139,7 +305,8 @@ class Settings(object):
 
     def _set_from_arguments(self):
         """Feed own attributes from arguments."""
-        # a file is given in the arguments
+
+        # settings data
         if self.args.file is not None:
             # so set this file and also set the split_years... to False
             self.ledger_file = self.args.file
@@ -153,6 +320,138 @@ class Settings(object):
 
         if self.args.split:
             self._split_years_to_files = True
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        # transaction data
+
+        if self.args.date is not None:
+            try:
+                self.date = datetime.strptime(self.args.date, '%Y-%m-%d')
+                # arguments altered the settings. this will disable saving the settings
+                self._got_arguments = True
+            except Exception:
+                pass
+
+        if self.args.uncleared:
+            self.def_state = '!'
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.code is not None:
+            self.def_code = self.args.code
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.payee is not None:
+            self.def_payee = self.args.payee
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.commodity is not None:
+            self.def_commodity = self.args.commodity
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.comments is not None:
+            self.def_comments = self.args.comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        # account data
+
+        if self.args.account_A is not None:
+            self.def_account_a = self.args.account_A
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_A_comments is not None:
+            self.def_account_a_com = self.args.account_A_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_A_amount is not None:
+            self.def_account_a_amt = str(self.args.account_A_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_B is not None:
+            self.def_account_b = self.args.account_B
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_B_comments is not None:
+            self.def_account_b_com = self.args.account_B_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_B_amount is not None:
+            self.def_account_b_amt = str(self.args.account_B_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_C is not None:
+            self.def_account_c = self.args.account_C
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_C_comments is not None:
+            self.def_account_c_com = self.args.account_C_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_C_amount is not None:
+            self.def_account_c_amt = str(self.args.account_C_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_D is not None:
+            self.def_account_d = self.args.account_D
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_D_comments is not None:
+            self.def_account_d_com = self.args.account_D_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_D_amount is not None:
+            self.def_account_d_amt = str(self.args.account_D_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_E is not None:
+            self.def_account_e = self.args.account_E
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_E_comments is not None:
+            self.def_account_e_com = self.args.account_E_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_E_amount is not None:
+            self.def_account_e_amt = str(self.args.account_E_amount)
 
             # arguments altered the settings. this will disable saving the settings
             self._got_arguments = True
@@ -243,7 +542,7 @@ class Settings(object):
             return path
 
         if type(year) is not int:
-            year = datetime.now().year
+            year = self.date.year
 
         # generate filename for specific year, if this feature is enabled
         if self._split_years_to_files:

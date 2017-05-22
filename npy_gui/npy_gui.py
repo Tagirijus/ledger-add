@@ -1,6 +1,7 @@
 """The graphical user interface for the ledgeradd programm."""
 
 from general.ledgerparse import Transaction
+from general import ledgeradd
 from npy_gui.npy_transactionform import TransactionForm
 from npy_gui.npy_transactioncheckform import TransactionCheckForm
 from npy_gui.npy_settingsform import SettingsForm
@@ -30,37 +31,8 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
 
     def gen_tmptrans(self):
         """Generate tmpTrans."""
-        self.tmpTrans = Transaction(
-            decimal_sep=self.S.dec_separator,
-            date_sep=self.S.date_separator,
-            state=self.S.def_state,
-            code=self.S.def_code,
-            payee=self.S.def_payee
-        )
-
-        self.tmpTrans.add_posting(
-            account=self.S.def_account_a,
-            no_amount=True
-        )
-
-        self.tmpTrans.add_posting(
-            account=self.S.def_account_b,
-            no_amount=True
-        )
-
-        self.tmpTrans.add_posting(
-            account=self.S.def_account_c,
-            no_amount=True
-        )
-
-        self.tmpTrans.add_posting(
-            account=self.S.def_account_d,
-            no_amount=True
-        )
-
-        self.tmpTrans.add_posting(
-            account=self.S.def_account_e,
-            no_amount=True
+        self.tmpTrans = ledgeradd.default_transaction(
+            settings=self.S
         )
 
         self.tmpTrans_new = False

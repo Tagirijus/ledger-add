@@ -123,3 +123,56 @@ def replace(text=None, trans=None):
 
     # replace the text
     return text.format(**replacer)
+
+
+def default_transaction(settings=None):
+    """Return Transaction object filled by settings defaults."""
+    if type(settings) is not Settings:
+        return ledgerparse.Transaction(transaction_string='')
+
+    trans = ledgerparse.Transaction(
+        decimal_sep=settings.dec_separator,
+        date_sep=settings.date_separator,
+        date=settings.date,
+        state=settings.def_state,
+        code=settings.def_code,
+        payee=settings.def_payee,
+        comments=settings.def_comments
+    )
+
+    trans.add_posting(
+        account=settings.def_account_a,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_a_amt,
+        comments=settings.def_account_a_com
+    )
+
+    trans.add_posting(
+        account=settings.def_account_b,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_b_amt,
+        comments=settings.def_account_b_com
+    )
+
+    trans.add_posting(
+        account=settings.def_account_c,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_c_amt,
+        comments=settings.def_account_c_com
+    )
+
+    trans.add_posting(
+        account=settings.def_account_d,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_d_amt,
+        comments=settings.def_account_d_com
+    )
+
+    trans.add_posting(
+        account=settings.def_account_e,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_e_amt,
+        comments=settings.def_account_e_com
+    )
+
+    return trans
