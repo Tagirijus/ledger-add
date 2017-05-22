@@ -22,7 +22,8 @@ def main():
         app.run()
 
     # start the non-GUI version
-    ledgeradd.non_gui_application(settings=settings)
+    else:
+        ledgeradd.non_gui_application(settings=settings)
 
 if __name__ == '__main__':
     main()
