@@ -26,8 +26,31 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         # set up key shortcuts
         self.add_handlers({
             '^O': self.on_ok,
-            '^Q': self.on_cancel
+            '^Q': self.on_cancel,
+            '^F': self.clear_widget,
+            '^A': self.select_account
         })
+
+    def clear_widget(self, keypress=None):
+        """Clear widget."""
+        self.get_widget(self.editw).value = ''
+
+    def select_account(self, keypress=None):
+        """
+        Switch to account widget.
+
+        Buggy! npyscreen switches to the widget correctly directly after
+        first usage. After that it chooses the wrong widget according
+        to following pattern:
+            - a widget above account_a is selected:
+                > ONE widget above account_a is beeing selected
+            - a widget below account_a is selected:
+                > ONE widget below account_a is beeing selected
+        """
+        # disable old editing if it's not the account_a
+        self.get_widget(self.editw).entry_widget.editing = False
+        # set account_a into focus
+        self.set_editing(self.account_a)
 
     def new_trans(self):
         """Make new transaction."""
