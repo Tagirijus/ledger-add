@@ -134,6 +134,7 @@ def default_transaction(settings=None):
         decimal_sep=settings.dec_separator,
         date_sep=settings.date_separator,
         date=settings.date,
+        aux_date=settings.date,
         state=settings.def_state,
         code=settings.def_code,
         payee=settings.def_payee,
@@ -256,7 +257,7 @@ def trans_modify(settings=None, journal=None, transaction=None):
     return infotext
 
 
-def check_trans_in_journal(settings=None, journal=None, transaction=None):
+def check_trans_in_journal(settings=None, transaction=None):
     """
     Modify journal with transaction and return tuple.
 
@@ -264,11 +265,10 @@ def check_trans_in_journal(settings=None, journal=None, transaction=None):
         (infotext, journal, transaction)
     """
     is_settings = type(settings) is Settings
-    is_journal = type(journal) is ledgerparse.Journal
     is_trans = type(transaction) is ledgerparse.Transaction
 
     # cancel if one object is wrong
-    if not is_settings or not is_journal or not is_trans:
+    if not is_settings or not is_trans:
         return (
             'Invalid arguments given in check_trans_in_journal()!',
             ledgerparse.Journal(journal_string=''),
@@ -325,9 +325,35 @@ def check_trans_in_journal(settings=None, journal=None, transaction=None):
 def non_gui_application(settings=None):
     """Start the non-GUI application of ledgeradd."""
     if type(settings) is not Settings:
-        print('No valid settings file found!')
+        print('Something went wrong, sorry.')
         exit()
 
     # get the transaction
     trans = default_transaction(settings=settings)
-    print(trans.balance())
+
+    # check transaction and journal and stuff
+    infotext, journal, trans = check_trans_in_journal(
+        settings=settings,
+        transaction=trans
+    )
+
+    # ask user for change, if not settings.args.force is True
+    if not settings.args.force:
+        print(infotext)
+        user = input('[yes|y|no|n]: ')
+        if user.lower() not in ['yes', 'y']:
+            # cancel
+            print('Canceled ...')
+            exit()
+
+    # do it, if input is yes|y or settings.args.force is True
+    saved = save_journal(
+        settings=settings,
+        journal=journal,
+        year=trans.get_date().year
+    )
+
+    if not saved:
+        print('Saving went wrong. Wrong file?')
+    else:
+        print('Done!')

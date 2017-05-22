@@ -1,6 +1,5 @@
 """Form for entering the transaction data."""
 
-from general.ledgerparse import Journal
 from general import ledgeradd
 import npyscreen
 
@@ -18,7 +17,7 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
             '^Q': self.on_cancel
         })
 
-        self.journal = Journal(journal_string='')
+        self.journal = None
 
     def exit(self):
         """Exit the programm."""
@@ -39,13 +38,8 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
         infotext, self.journal, self.parentApp.tmpTransC = (
             ledgeradd.check_trans_in_journal(
                 settings=self.parentApp.S,
-                journal=self.journal,
                 transaction=self.parentApp.tmpTransC
             )
-        )
-
-        npyscreen.notify_confirm(
-            str(self.journal.to_str())
         )
 
         # set form title, color and infotext
