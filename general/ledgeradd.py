@@ -337,9 +337,20 @@ def non_gui_application(settings=None):
         transaction=trans
     )
 
+    # also get the filename
+    filename = settings.gen_ledger_filename(
+        absolute=True,
+        year=trans.get_date().year
+    )
+
+    # show infotext with filename
+    print('Working with:')
+    print(filename)
+    print()
+    print(infotext)
+
     # ask user for change, if not settings.args.force is True
     if not settings.args.force:
-        print(infotext)
         user = input('[yes|y|no|n]: ')
         if user.lower() not in ['yes', 'y']:
             # cancel
