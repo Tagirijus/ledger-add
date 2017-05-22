@@ -274,6 +274,16 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
 
     def beforeEditing(self):
         """Get values from settings object."""
+        # change name and color according to the settings
+        if self.parentApp.S._got_arguments:
+            self.name = (
+                'Ledgeradd > Settings (arguments altered settings - cannot save!'
+            )
+            self.color = 'DANGER'
+        else:
+            self.name = 'Ledgeradd > Settings'
+            self.color = 'FORMDEFAULT'
+
         self.data_path.value = self.parentApp.S.data_path
         self.ledger_path.value = self.parentApp.S.ledger_path
         self.def_state.value = [self.def_state.values.index(self.parentApp.S.def_state)]

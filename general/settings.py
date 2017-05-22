@@ -29,7 +29,8 @@ class Settings(object):
         split_years_to_files=None,
         afa_threshold_amount=None,
         afa_def_account=None,
-        afa_table=None
+        afa_table=None,
+        ignore_arguments=False
     ):
         """Initialize the class and hard code defaults, if no file is given."""
         self.args = argparse.ArgumentParser(
@@ -301,7 +302,8 @@ class Settings(object):
         self.load_settings_from_file()
 
         # alter it from arguments
-        self._set_from_arguments()
+        if not ignore_arguments:
+            self._set_from_arguments()
 
     def _set_from_arguments(self):
         """Feed own attributes from arguments."""
