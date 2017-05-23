@@ -1,5 +1,9 @@
 # Ledger command line accounting - transaction adder in python
 
+## TUI version
+
+I made a TUI / GUI version of this program with a way better and cleaner backend. You can check it out on the branch `Version2`!
+
 ## Note / ATTENTION!
 
 Use this program with care. I am no professional developer and I might have coded something that will destroy your ledger journal without intention. Always keep backups of your files!
