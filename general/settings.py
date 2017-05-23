@@ -81,6 +81,12 @@ class Settings(object):
             default=None,
             help='default date with formatting: year-month-day'
         )
+        self.args.add_argument(
+            '-aux',
+            '--aux-date',
+            default=None,
+            help='aux date for modify transaction feature: year-month-day'
+        )
 
         self.args.add_argument(
             '-u',
@@ -332,6 +338,7 @@ class Settings(object):
             True if split_years_to_files is None else split_years_to_files
         )
         self.date = datetime.now()
+        self.aux_date = None
 
         # afa feature
         self._afa_threshold_amount = Decimal('487.90')
@@ -373,6 +380,14 @@ class Settings(object):
         if self.args.date is not None:
             try:
                 self.date = datetime.strptime(self.args.date, '%Y-%m-%d')
+                # arguments altered the settings. this will disable saving the settings
+                self._got_arguments = True
+            except Exception:
+                pass
+
+        if self.args.aux_date is not None:
+            try:
+                self.aux_date = datetime.strptime(self.args.aux_date, '%Y-%m-%d')
                 # arguments altered the settings. this will disable saving the settings
                 self._got_arguments = True
             except Exception:

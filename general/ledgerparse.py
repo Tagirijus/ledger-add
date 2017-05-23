@@ -485,6 +485,9 @@ class Transaction(object):
         if transaction_string is None:
             transaction_string = self.transaction_string
 
+        # reset postings
+        self.clear_postings()
+
         # cycle through the lines of the given transaction_string
         is_trans = True
         for line in transaction_string.splitlines():

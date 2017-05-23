@@ -238,7 +238,7 @@ def trans_add(
 
 
 def trans_modify(settings=None, journal=None, transaction=None):
-    """Return modify transaction and return infotext."""
+    """Modify transaction and return infotext."""
     is_settings = type(settings) is Settings
     is_journal = type(journal) is ledgerparse.Journal
     is_trans = type(transaction) is ledgerparse.Transaction
@@ -247,20 +247,35 @@ def trans_modify(settings=None, journal=None, transaction=None):
     if not is_settings or not is_journal or not is_trans:
         return 'Invalid arguments given in trans_modify()!'
 
+    vorher = str(transaction)
+
     # get original transaction
     trans = journal.trans_exists(code=transaction.code)
 
-    # get aux date from actual transaction
-    trans.set_aux_date(transaction.get_date())
+    # tweak the dates
+
+    # nothign is set, take the default settings date as new aux date (today)
+    if settings.date is None and settings.aux_date is None:
+        trans.set_aux_date(transaction.get_date())
+
+    # date is set, take this as new aux date
+    elif settings.date is None and settings.aux_date is not None:
+        trans.set_aux_date(settings.aux_date)
+
+    # date and aux date are set: alter the dates accordingly
+    elif settings.date is not None and settings.aux_date is not None:
+        trans.set_date(settings.date)
+        trans.set_aux_date(settings.aux_date)
 
     # check if cleared and add extra warning
     is_cleared = trans.get_state() == '*'
 
     # clear it
-    trans.set_state('*')
+    if not settings.args.uncleared:
+        trans.set_state('*')
 
-    # "fill" original transaction back
-    transaction = trans
+    # fill back the transaction
+    transaction._to_transaction(transaction_string=trans.to_str())
 
     infotext = '---\n'
     infotext += transaction.to_str()
@@ -694,7 +709,7 @@ def non_gui_append_or_modify(settings=None, transaction=None):
     is_settings = type(settings) is Settings
 
     if not is_settings:
-        print('Soemthing went wrong ...')
+        print('Something went wrong ...')
         exit()
 
     # handle replacement function for non-gui application
@@ -705,6 +720,9 @@ def non_gui_append_or_modify(settings=None, transaction=None):
         settings=settings,
         transaction=transaction,
     )
+
+    # DELETE ME
+    print('Debug: ' + trans.to_str())
 
     # check if transaction works
     check = trans.check()
