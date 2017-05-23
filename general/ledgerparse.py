@@ -680,13 +680,6 @@ class Transaction(object):
 
     def to_str(self, alias=False):
         """Convert attributes to readable ledger transaction string."""
-        # return empty string, if check fails
-        if (
-            self.check()['need_more_accounts'] or
-            self.check()['cannot_balance']
-        ):
-            return ''
-
         # get date
         tmp_date = self._date.strftime(
             '%Y' + self.date_sep + '%m' + self.date_sep + '%d'
@@ -948,7 +941,7 @@ class Posting(object):
         # not empty
         else:
             # get the commodity
-            tmp_commodity = '  {} '.format(self.commodity) if self.commodity else ''
+            tmp_commodity = '  {} '.format(self.commodity) if self.commodity else '  '
 
             """
             Following block will add one or two zeros after the decimal separator,

@@ -447,6 +447,7 @@ def non_gui_presets_replace(settings=None, transaction=None):
     # get payee
     if settings.args.payee is not None:
         transaction.payee = settings.args.payee
+
     transaction.payee = replace(text=transaction.payee, trans=transaction)
 
     # get commodity
@@ -455,8 +456,10 @@ def non_gui_presets_replace(settings=None, transaction=None):
 
     # get comments
     comments = '\n'.join(transaction.get_comments())
+
     if settings.args.comments is not None:
         comments = settings.args.comments
+
     transaction.set_comments(
         replace(
             text=comments,
@@ -465,18 +468,118 @@ def non_gui_presets_replace(settings=None, transaction=None):
     )
 
     # replace posting values (name and comments)
-    for p in transaction.get_postings():
+    for i, p in enumerate(transaction.get_postings()):
+        # account A
+        if i == 0:
+            account = (
+                settings.args.account_A if settings.args.account_A is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_A_comments
+                if settings.args.account_A_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_A_amount
+                if settings.args.account_A_amount is not None
+                else p.get_amount()
+            )
+
+        # account B
+        elif i == 1:
+            account = (
+                settings.args.account_B if settings.args.account_B is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_B_comments
+                if settings.args.account_B_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_B_amount
+                if settings.args.account_B_amount is not None
+                else p.get_amount()
+            )
+
+        # account C
+        elif i == 2:
+            account = (
+                settings.args.account_C if settings.args.account_C is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_C_comments
+                if settings.args.account_C_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_C_amount
+                if settings.args.account_C_amount is not None
+                else p.get_amount()
+            )
+
+        # account D
+        elif i == 3:
+            account = (
+                settings.args.account_D if settings.args.account_D is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_D_comments
+                if settings.args.account_D_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_D_amount
+                if settings.args.account_D_amount is not None
+                else p.get_amount()
+            )
+
+        # account E
+        elif i == 4:
+            account = (
+                settings.args.account_E if settings.args.account_E is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_E_comments
+                if settings.args.account_E_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_E_amount
+                if settings.args.account_E_amount is not None
+                else p.get_amount()
+            )
+
         # account name
-        p.account = replace(text=p.account, trans=transaction)
+        p.account = replace(text=account, trans=transaction)
 
         # posting comments
-        comments = '\n'.join(p.get_comments())
         p.set_comments(
             replace(
                 text=comments,
                 trans=transaction
             ).splitlines()
         )
+
+        # amount stuff
+        if amount != p.get_amount():
+            p.set_amount(amount)
+            if amount != 0:
+                p.set_no_amount(False)
 
     return transaction
 

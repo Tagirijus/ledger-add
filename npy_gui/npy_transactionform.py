@@ -28,7 +28,8 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             '^O': self.on_ok,
             '^Q': self.on_cancel,
             '^F': self.clear_widget,
-            '^A': self.select_account
+            '^A': self.select_account,
+            '^L': self.show_presets
         })
 
     def clear_widget(self, keypress=None):
@@ -111,6 +112,43 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.History
         )
 
+    def show_presets(self, keypress=None):
+        """Show presets."""
+        self.values_to_tmp(message=False)
+        self.parentApp.setNextForm('Presets')
+        self.parentApp.switchFormNow()
+
+    def add_preset(self):
+        """Add current trans to presets."""
+        # get name for preset
+        name = npyscreen.notify_input(
+            'Name for preset'
+        )
+
+        if not name:
+            return
+
+        # get info for preset
+        info = npyscreen.notify_input(
+            'Infotext'
+        )
+
+        if info is False:
+            return
+
+        # try to add it to the presets
+        added = self.parentApp.P.add_trans(
+            name=name,
+            info=info,
+            transaction=self.parentApp.tmpTrans
+        )
+
+        if not added:
+            npyscreen.notify_confirm(
+                'Could not add preset. Name probably already exists.',
+                form_color='WARNING'
+            )
+
     def show_settings(self):
         """Switch to settings form."""
         self.values_to_tmp(message=False)
@@ -129,6 +167,8 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.m.addItem(text='New', onSelect=self.new_trans, shortcut='n')
         self.m.addItem(text='Afa feature', onSelect=self.afa_feature, shortcut='a')
         self.m.addItem(text='History', onSelect=self.show_history, shortcut='h')
+        self.m.addItem(text='Show presets', onSelect=self.show_presets, shortcut='p')
+        self.m.addItem(text='Add to presets', onSelect=self.add_preset, shortcut='P')
         self.m.addItem(text='Settings', onSelect=self.show_settings, shortcut='s')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')
 

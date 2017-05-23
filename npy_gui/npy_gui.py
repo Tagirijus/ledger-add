@@ -6,6 +6,7 @@ from general.settings import Settings
 from npy_gui.npy_afaform import AfaCheckForm
 from npy_gui.npy_afaform import AfaTypeChooseForm
 from npy_gui.npy_afaform import AfaPostingChooseForm
+from npy_gui.npy_presetform import PresetForm
 from npy_gui.npy_transactionform import TransactionForm
 from npy_gui.npy_transactioncheckform import TransactionCheckForm
 from npy_gui.npy_settingsform import SettingsForm
@@ -82,4 +83,11 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
             'AfaTypeChoose',
             AfaTypeChooseForm,
             name='Choose type for tax depreciation'
+        )
+
+        # preset form
+        self.addForm(
+            'Presets',
+            PresetForm,
+            name='Ledgeradd > Presets'
         )
