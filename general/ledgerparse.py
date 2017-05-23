@@ -461,7 +461,7 @@ class Transaction(object):
             # leading whitespace with * or ! or only whitespace
             r'[ ]+(?P<state>[\*|!])?'
             # leading white space + code inside '()' + whitespace or only withespace
-            r'[ ]+?(\((?P<code>[^\)].+)\)[ ]+)?'
+            r'[ ]+?(\((?P<code>[^\)].*)\)[ ]+)?'
             # string for payee
             r'(?P<payee>.+)'
         )
