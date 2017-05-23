@@ -3,3 +3,4 @@
 /data_path.lasettings
 /ledger-add*
 /general/ledger-add.py
+*.pyc
