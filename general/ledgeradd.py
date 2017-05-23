@@ -270,8 +270,10 @@ def trans_modify(settings=None, journal=None, transaction=None):
     # check if cleared and add extra warning
     is_cleared = trans.get_state() == '*'
 
-    # clear it
-    if not settings.args.uncleared:
+    # un/clear it
+    if settings.args.uncleared:
+        trans.set_state('!')
+    else:
         trans.set_state('*')
 
     # fill back the transaction
