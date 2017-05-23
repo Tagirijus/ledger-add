@@ -31,6 +31,11 @@ class PresetList(npyscreen.MultiLineAction):
             transaction_string=act_on_this['transaction']
         )
 
+        # get date back
+        self.parent.parentApp.tmpTrans.set_date(
+            self.parent.parentApp.tmpTransC.get_date()
+        )
+
         # show infotext, if it exists
         if act_on_this['info'] != '':
             npyscreen.notify_confirm(

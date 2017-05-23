@@ -305,6 +305,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.gen_tmptrans()
 
         self.date.value = self.parentApp.tmpTrans.get_date()
+        self.date.entry_widget.dateFmt = self.parentApp.S.date_fmt
         self.state.value = [self.state.values.index(self.parentApp.tmpTrans.get_state())]
         self.code.value = self.parentApp.tmpTrans.code
         self.payee.value = self.parentApp.tmpTrans.payee

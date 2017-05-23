@@ -252,6 +252,11 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             name='Date separator:',
             begin_entry_at=26
         )
+        self.date_fmt = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Date format:',
+            begin_entry_at=26
+        )
         self.ledger_file = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Ledger file:',
@@ -301,6 +306,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         self.def_account_d.value = self.parentApp.S.def_account_d
         self.dec_separator.value = self.parentApp.S.dec_separator
         self.date_separator.value = self.parentApp.S.date_separator
+        self.date_fmt.value = self.parentApp.S.date_fmt
         self.ledger_file.value = self.parentApp.S.ledger_file
         self.split_years_to_files.value = (
             [0] if self.parentApp.S.get_split_years_to_files() else []
@@ -354,6 +360,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             # formatting
             self.parentApp.S.dec_separator = self.dec_separator.value
             self.parentApp.S.date_separator = self.date_separator.value
+            self.parentApp.S.date_fmt = self.date_fmt.value
 
             # file
             self.parentApp.S.ledger_file = self.ledger_file.value

@@ -25,6 +25,7 @@ class Settings(object):
         def_account_e=None,
         dec_separator=None,
         date_separator=None,
+        date_fmt=None,
         ledger_file=None,
         split_years_to_files=None,
         afa_threshold_amount=None,
@@ -317,6 +318,7 @@ class Settings(object):
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
         self.date_separator = '-' if date_separator is None else date_separator
+        self.date_fmt = '%d %B, %Y' if date_fmt is None else date_fmt
 
         # file handling
         ledger_file_default = (
@@ -610,6 +612,7 @@ class Settings(object):
         out['def_account_e'] = self.def_account_e
         out['dec_separator'] = self.dec_separator
         out['date_separator'] = self.date_separator
+        out['date_fmt'] = self.date_fmt
         out['ledger_file'] = self.ledger_file
         out['split_years_to_files'] = self._split_years_to_files
         out['afa_threshold_amount'] = float(self._afa_threshold_amount)
@@ -674,6 +677,9 @@ class Settings(object):
 
         if 'date_separator' in js.keys():
             self.date_separator = js['date_separator']
+
+        if 'date_fmt' in js.keys():
+            self.date_fmt = js['date_fmt']
 
         if 'ledger_file' in js.keys():
             self.ledger_file = js['ledger_file']
