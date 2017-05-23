@@ -28,7 +28,6 @@ class Settings(object):
         ledger_file=None,
         split_years_to_files=None,
         afa_threshold_amount=None,
-        afa_def_account=None,
         afa_table=None
     ):
         """Initialize the class and hard code defaults, if no file is given."""
@@ -215,6 +214,13 @@ class Settings(object):
             metavar=''
         )
 
+        self.args.add_argument(
+            '-afa',
+            '--afa-feature',
+            action='store_true',
+            help='starts afa-feature for the non-gui application (needs a code with).'
+        )
+
         self.args = self.args.parse_args()
 
         self._got_arguments = False
@@ -258,19 +264,19 @@ class Settings(object):
         self.def_commodity = '€' if def_commodity is None else def_commodity
         self.def_comments = None
         self.def_account_a = '' if def_account_a is None else def_account_a
-        self.def_account_a_com = None
+        self.def_account_a_com = []
         self.def_account_a_amt = None
         self.def_account_b = '' if def_account_b is None else def_account_b
-        self.def_account_b_com = None
+        self.def_account_b_com = []
         self.def_account_b_amt = None
         self.def_account_c = '' if def_account_c is None else def_account_c
-        self.def_account_c_com = None
+        self.def_account_c_com = []
         self.def_account_c_amt = None
         self.def_account_d = '' if def_account_d is None else def_account_d
-        self.def_account_d_com = None
+        self.def_account_d_com = []
         self.def_account_d_amt = None
         self.def_account_e = '' if def_account_e is None else def_account_e
-        self.def_account_e_com = None
+        self.def_account_e_com = []
         self.def_account_e_amt = None
 
         # formatting
@@ -293,7 +299,6 @@ class Settings(object):
         # afa feature
         self._afa_threshold_amount = Decimal('487.90')
         self.set_afa_threshold_amount(afa_threshold_amount)
-        self.afa_def_account = 'afa' if afa_def_account is None else afa_def_account
         self._afa_table = []
         self.set_afa_table(afa_table)
 
@@ -573,7 +578,6 @@ class Settings(object):
         out['ledger_file'] = self.ledger_file
         out['split_years_to_files'] = self._split_years_to_files
         out['afa_threshold_amount'] = float(self._afa_threshold_amount)
-        out['afa_def_account'] = self.afa_def_account
         out['afa_table'] = self._afa_table
 
         # return the json
@@ -644,9 +648,6 @@ class Settings(object):
 
         if 'afa_threshold_amount' in js.keys():
             self.set_afa_threshold_amount(js['afa_threshold_amount'])
-
-        if 'afa_def_account' in js.keys():
-            self.afa_def_account = js['afa_def_account']
 
         if 'afa_table' in js.keys():
             self.set_afa_table(js['afa_table'])

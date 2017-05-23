@@ -37,10 +37,10 @@ class AfaListAction(npyscreen.MultiLineAction):
 
         account = npyscreen.notify_input(
             'Account string:',
-            pre_text='[ACCOUNT]:'
+            pre_text='afa'
         )
 
-        if not account or account == '[ACCOUNT]:':
+        if not account:
             return
 
         years = npyscreen.notify_input(
@@ -111,7 +111,7 @@ class AfaListAction(npyscreen.MultiLineAction):
             pre_text=act_on_this['account']
         )
 
-        if not account or account == '[ACCOUNT]:':
+        if not account:
             return
 
         years = npyscreen.notify_input(
@@ -165,6 +165,14 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             '^Q': self.on_cancel
         })
 
+    def add_afa(self):
+        """Add afa table entry."""
+        self.afa_table.entry_widget.add_afa_entry()
+
+    def del_afa(self):
+        """Delete afa table entry."""
+        self.afa_table.entry_widget.delete_afa_entry()
+
     def exit(self):
         """Exit the programm."""
         self.parentApp.setNextForm(None)
@@ -174,6 +182,8 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         """Create the form."""
         # create the menu
         self.m = self.new_menu(name='Menu')
+        self.m.addItem(text='Add afa entry', onSelect=self.add_afa, shortcut='a')
+        self.m.addItem(text='Del afa entry', onSelect=self.del_afa, shortcut='d')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')
 
         # create input widgets
@@ -260,11 +270,6 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             name='AfA threshold amount:',
             begin_entry_at=26
         )
-        self.afa_def_account = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='AfA default account:',
-            begin_entry_at=26
-        )
         self.afa_table = self.add_widget_intelligent(
             TitleAfaList,
             name='AfA table:',
@@ -301,7 +306,6 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             [0] if self.parentApp.S.get_split_years_to_files() else []
         )
         self.afa_threshold_amount.value = str(self.parentApp.S.get_afa_threshold_amount())
-        self.afa_def_account.value = self.parentApp.S.afa_def_account
         self.afa_table.entry_widget.update_values()
 
     def on_ok(self, keypress=None):
@@ -359,7 +363,6 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
 
             # afa
             self.parentApp.S.set_afa_threshold_amount(self.afa_threshold_amount.value)
-            self.parentApp.S.afa_def_account = self.afa_def_account.value
             self.parentApp.S.set_afa_table(self.afa_table.entry_widget.values)
 
             # store it

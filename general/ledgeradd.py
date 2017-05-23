@@ -1,8 +1,8 @@
 """The ledgeradd backend."""
 
 
-import re
 from datetime import datetime
+from decimal import Decimal
 from general import ledgerparse
 from general.settings import Settings
 import os
@@ -19,6 +19,21 @@ class ReplacementDict(dict):
     def __missing__(self, key):
         """Return the key instead."""
         return '{' + str(key).replace('#', '') + '}'
+
+
+def get_top_account(account=''):
+    """
+    Return top account name.
+
+    ledger account names are separated by ':'. So for this string
+        Expenses:Car:Gas
+    this function would return
+        Gas
+    """
+    if len(str(account).split(':')) > 1:
+        return str(account).split(':')[-1]
+    else:
+        return str(account)
 
 
 def load_journal(
@@ -43,7 +58,11 @@ def load_journal(
     )
 
     # simply load the given file
-    return ledgerparse.Journal(journal_file=absolute)
+    return ledgerparse.Journal(
+        journal_file=absolute,
+        decimal_sep=settings.dec_separator,
+        date_sep=settings.date_separator
+    )
 
 
 def save_journal(
@@ -178,7 +197,14 @@ def default_transaction(settings=None):
 
     return trans
 
-def trans_add(settings=None, journal=None, transaction=None):
+
+def trans_add(
+    infotext='',
+    settings=None,
+    journal=None,
+    transaction=None,
+    skip_last_info_part=False
+):
     """Add transaction to journal and generate infotext."""
     is_settings = type(settings) is Settings
     is_journal = type(journal) is ledgerparse.Journal
@@ -193,7 +219,7 @@ def trans_add(settings=None, journal=None, transaction=None):
         transaction_string=transaction.to_str()
     )
 
-    infotext = '---\n'
+    infotext += '---\n'
     infotext += transaction.to_str()
     infotext += '\n---\n'
     infotext += '\n'
@@ -203,8 +229,9 @@ def trans_add(settings=None, journal=None, transaction=None):
             if p.balance() > 0
         ]
     )))
-    infotext += '\n\n'
-    infotext += 'Add this transaction to the journal?\n'
+    if not skip_last_info_part:
+        infotext += '\n\n'
+        infotext += 'Add this transaction to the journal?\n'
 
     return infotext
 
@@ -257,7 +284,7 @@ def trans_modify(settings=None, journal=None, transaction=None):
     return infotext
 
 
-def check_trans_in_journal(settings=None, transaction=None):
+def check_trans_in_journal(settings=None):
     """
     Modify journal with transaction and return tuple.
 
@@ -265,15 +292,17 @@ def check_trans_in_journal(settings=None, transaction=None):
         (infotext, journal, transaction)
     """
     is_settings = type(settings) is Settings
-    is_trans = type(transaction) is ledgerparse.Transaction
 
     # cancel if one object is wrong
-    if not is_settings or not is_trans:
+    if not is_settings:
         return (
             'Invalid arguments given in check_trans_in_journal()!',
             ledgerparse.Journal(journal_string=''),
             ledgerparse.Transaction(transaction_string='')
         )
+
+    # get the transaction
+    transaction = default_transaction(settings=settings)
 
     # beginn checking the transaction in the last year and actual year according
     # to the transactions date
@@ -322,19 +351,89 @@ def check_trans_in_journal(settings=None, transaction=None):
     return (infotext, journal, transaction)
 
 
+def replace_settings_defaults(settings=None):
+    """Return new Settings object with replaced defaults."""
+    is_settings = type(settings) is Settings
+
+    if not is_settings:
+        return settings
+
+    # replace the defaults
+
+    # first the account names
+    settings.def_account_a = replace(
+        text=settings.def_account_a,
+        trans=default_transaction(settings=settings)
+    )
+    settings.def_account_b = replace(
+        text=settings.def_account_b,
+        trans=default_transaction(settings=settings)
+    )
+    settings.def_account_c = replace(
+        text=settings.def_account_c,
+        trans=default_transaction(settings=settings)
+    )
+    settings.def_account_d = replace(
+        text=settings.def_account_d,
+        trans=default_transaction(settings=settings)
+    )
+    settings.def_account_e = replace(
+        text=settings.def_account_e,
+        trans=default_transaction(settings=settings)
+    )
+
+    # then the comments
+    settings.def_account_a_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_a_com
+    ]
+    settings.def_account_b_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_b_com
+    ]
+    settings.def_account_c_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_c_com
+    ]
+    settings.def_account_d_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_d_com
+    ]
+    settings.def_account_e_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_e_com
+    ]
+
+    return settings
+
+
 def non_gui_application(settings=None):
     """Start the non-GUI application of ledgeradd."""
     if type(settings) is not Settings:
         print('Something went wrong, sorry.')
         exit()
 
-    # get the transaction
-    trans = default_transaction(settings=settings)
+    # handle replacement function for non-gui application
+    settings = replace_settings_defaults(settings=settings)
 
     # check transaction and journal and stuff
     infotext, journal, trans = check_trans_in_journal(
-        settings=settings,
-        transaction=trans
+        settings=settings
     )
 
     # also get the filename
@@ -366,5 +465,373 @@ def non_gui_application(settings=None):
 
     if not saved:
         print('Saving went wrong. Wrong file?')
+    else:
+        print('Done!')
+
+
+def afa_get_postings(transaction=None):
+    """Return postings with amount > 0 from transaction in list."""
+    if type(transaction) is not ledgerparse.Transaction:
+        return []
+
+    return [
+        p for p in transaction.get_postings()
+        if p.balance() > 0
+    ]
+
+
+def afa_single_transaction(
+    year=None,
+    transaction=None,
+    posting=None,
+    afa_account=None,
+    amount=None
+):
+    """Generate a single afa transaction."""
+    is_year = type(year) is int
+    is_trans = type(transaction) is ledgerparse.Transaction
+    is_posting = type(posting) is ledgerparse.Posting
+    afa_account = str(afa_account)
+    is_amount = type(amount) is Decimal
+
+    # return empty transaction, if an argument is invalid
+    if not is_year or not is_trans or not is_posting or not is_amount:
+        return ledgerparse.Transaction(transaction_string='')
+
+    # generate a new transaction with given data
+    new_trans = ledgerparse.Transaction(
+        date=datetime(year=year, month=12, day=31),  # afa transaction is end of the year
+        aux_date=datetime(year=year, month=12, day=31),
+        state='*',
+        code=transaction.code,
+        payee=transaction.payee,
+        comments=transaction.get_comments()
+    )
+
+    # add the depreciation posting to the transaction
+    new_trans.add_posting(
+        account=posting.account,
+        commodity=posting.commodity,
+        amount=amount,
+        comments=posting.get_comments()
+    )
+
+    # add the afa account posting to the transaction
+    new_trans.add_posting(
+        account=afa_account + ':' + get_top_account(account=posting.account)
+    )
+
+    return new_trans
+
+
+def afa_generate_transactions(
+    settings=None,
+    afa_type=None,
+    transaction=None,
+    posting=None
+):
+    """Generate list with transactions for the afa feature."""
+    is_settings = type(settings) is Settings
+    is_afa_type = type(afa_type) is dict
+    is_trans = type(transaction) is ledgerparse.Transaction
+    is_posting = type(posting) is ledgerparse.Posting
+
+    # return empty list, if any argument is invalid
+    if not is_settings or not is_afa_type or not is_trans or not is_posting:
+        return []
+
+    # calculate the shit!
+
+    # check if postings amount is < settings afa threshold amount
+    if posting.get_amount() < settings.get_afa_threshold_amount():
+        # return a list with only one transaction
+        return [
+            afa_single_transaction(
+                year=transaction.get_date().year,
+                transaction=transaction,
+                posting=posting,
+                afa_account=afa_type['account'],
+                amount=posting.get_amount() * -1
+            )
+        ]
+
+    # otherwise split the transactions over the years
+
+    # init output variable
+    all_trans = []
+
+    # calculate the depreciation amount per month
+    per_year_amount = round(posting.get_amount() / afa_type['years'], 2)
+    per_month_amount = round(per_year_amount / 12, 2)
+
+    # get starting value for item
+    remaining_amount = posting.get_amount()
+    depreciate_amount = Decimal('0.00')
+
+    # get starting year of the transactions
+    year = transaction.get_date().year
+    start_year = year
+
+    # generate and append afa transactions, while amount is > 0
+    while remaining_amount > 0:
+
+        # depreciate the remaining_amount for actual year
+        # only happens for the buy-year of the item
+        if year == start_year:
+            month_left = 13 - transaction.get_date().month
+            remaining_amount -= per_month_amount * month_left
+            depreciate_amount += per_month_amount * month_left
+
+        # go on with the other years, while remaining_amount >= per_year_amount
+        elif year > start_year and remaining_amount >= per_year_amount:
+            remaining_amount -= per_year_amount
+            depreciate_amount += per_year_amount
+
+        # or just depreciate the remaining
+        else:
+            depreciate_amount = remaining_amount
+            remaining_amount = 0
+
+        # generate an afa transaction for this year
+        all_trans.append(afa_single_transaction(
+            year=year,
+            transaction=transaction,
+            posting=posting,
+            afa_account=afa_type['account'],
+            amount=depreciate_amount * -1
+        ))
+
+        # go into the next year and reset depreciation
+        year += 1
+        depreciate_amount = Decimal('0.00')
+
+    return all_trans
+
+
+def afa_check_trans_in_journal(settings=None):
+    """
+    Check if transaction exists in journal.
+
+    Return original transaction or error code as string.
+    """
+    is_settings = type(settings) is Settings
+
+    # cancel on invalid argument
+    if not is_settings:
+        return 'check_trans_in_journal_afa() got wrong argument.'
+
+    # get the transaction
+    transaction = default_transaction(settings=settings)
+
+    # cancel if the transaction has no code
+    if transaction.code == '':
+        return 'Given transaction is missing a code!'
+
+    # get trans for actual year
+    found_trans = load_journal(
+        settings=settings,
+        year=transaction.get_date().year
+    ).trans_exists(code=transaction.code)
+
+    # or search it in the last year, if it was not found
+    if not found_trans:
+        found_trans = load_journal(
+            settings=settings,
+            year=transaction.get_date().year - 1
+        ).trans_exists(code=transaction.code)
+
+    # cancel if it as not found in the last year either
+    if not found_trans:
+        return 'No transaction with this code found in this or the last year.'
+
+    # or retun the transaction otherwise
+    return found_trans
+
+
+def afa_generate_journals(settings=None, transaction_list=None):
+    """
+    Generate new journals with given list, which holds transactions.
+
+    Outputs a tuple like this:
+        (infotext, {year: Journal object})
+    """
+    is_settings = type(settings) is Settings
+    is_list = type(transaction_list) is list
+
+    # return empty stuff, if one argument is invalid
+    if not is_settings or not is_list:
+        return (
+            'Invalid arguments given in afa_generate_journals().',
+            {}
+        )
+
+    # also cancel if list is empty
+    if len(transaction_list) == 0:
+        return (
+            'No afa transactions generated.',
+            {}
+        )
+
+    # init variables
+    journals = {}
+    infotext = ''
+
+    # cycle through the transactions
+    for t in transaction_list:
+
+        # split_years is enabled
+        if settings.get_split_years_to_files():
+            key = t.get_date().year
+        else:
+            # any year ... but static!
+            key = 1987
+
+        # it's the first transaction for this year
+        if not key in journals.keys():
+            journals[key] = load_journal(
+                settings=settings,
+                year=key
+            )
+
+        # add the transaction to the journal
+        journals[key].add_transaction(
+            transaction_string=t.to_str()
+        )
+
+        # append infotext
+        infotext += '\n'
+        infotext += journals[key].journal_file
+        infotext += '\n---\n'
+        infotext += t.to_str()
+        infotext += '\n---\n\n'
+
+    infotext += 'Append these transaction/s to the journal/s ?'
+
+    return (
+        infotext,
+        journals
+    )
+
+
+def afa_save_journal_list(settings=None, journal_dict=None):
+    """Save the journal_list to file/s."""
+    is_settings = type(settings) is Settings
+    is_dict = type(journal_dict) is dict
+
+    # cancel if invalid argument is given
+    if not is_settings or not is_dict:
+        return False
+
+    # also cancel if dict is empty
+    if len(journal_dict.keys()) == 0:
+        return False
+
+    # cycle through dict and save every journal
+    check = True
+    for year in journal_dict.keys():
+        saved = save_journal(
+            settings=settings,
+            journal=journal_dict[year],
+            year=year
+        )
+
+        check = saved
+
+    return check
+
+
+def non_gui_afa_feature(settings=None):
+    """Start german tax depreciation feature (no-gui version!)."""
+    is_settings = type(settings) is Settings
+
+    # cancel if one object is wrong
+    if not is_settings:
+        print('Something went wrong, sorry.')
+        exit()
+
+    # check if transaction (code) exists and return the original transaction
+    trans = afa_check_trans_in_journal(settings=settings)
+
+    # cancel with "error" code, if no transaction was found
+    if type(trans) is str:
+        print(trans)
+        exit()
+
+    # get postings which amount is > 0
+    posts = afa_get_postings(transaction=trans)
+
+    # cancel if there are no postings
+    if len(posts) == 0:
+        print('No postings found for afa feature, canceling ...')
+        exit()
+
+    # list the postings
+    for i, p in enumerate(posts):
+        print('{}: {}'.format(i, p.account))
+
+    # ask user which posting / account should be used
+    user = input('Which account for afa [0]: ')
+
+    # on wrong input, use 0 as default
+    try:
+        use_posting = posts[int(user)]
+    except Exception:
+        use_posting = posts[0]
+
+    print()
+
+    # list afa table from settings
+    if len(settings.get_afa_table()) > 0:
+        for i, x in enumerate(settings.get_afa_table()):
+            print('{}: {}'.format(i, x['name']))
+
+        # ask user which afa type it is
+        user = input('Which afa type is it [0]: ')
+
+        # on wrong input, use first afa_table type
+        try:
+            use_afa = settings.get_afa_table()[int(user)]
+        except Exception:
+            use_afa = settings.get_afa_table()[0]
+
+    # afa table from settings does not exist, cancel
+    else:
+        print('No afa table exists. Add entries in the GUI version of this programm.')
+        print('Canceling ...')
+        exit()
+
+    # generate a list of transactions according to chosen values
+    afa_trans_list = afa_generate_transactions(
+        settings=settings,
+        afa_type=use_afa,
+        transaction=trans,
+        posting=use_posting
+    )
+
+    # get infotext and list of journals
+    infotext, journals = afa_generate_journals(
+        settings=settings,
+        transaction_list=afa_trans_list
+    )
+
+    # ask user to append or not
+    print(infotext)
+    print()
+
+    user = input('[yes|y|no|n]: ')
+
+    if user.lower() not in ['yes', 'y']:
+        # cancel
+        print('Canceled ...')
+        exit()
+
+    # save the journals
+    saved = afa_save_journal_list(
+        settings=settings,
+        journal_dict=journals
+    )
+
+    if not saved:
+        print('Saving went wrong, sorry ...')
     else:
         print('Done!')

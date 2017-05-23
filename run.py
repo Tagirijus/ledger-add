@@ -21,7 +21,11 @@ def main():
         app = npy_gui.LedgeraddApplication(settings=settings)
         app.run()
 
-    # start the non-GUI version
+    # start the non-GUI version - afa feature
+    elif settings.args.nogui and settings.args.afa_feature:
+        ledgeradd.non_gui_afa_feature(settings=settings)
+
+    # just start the non-GUI version
     else:
         ledgeradd.non_gui_application(settings=settings)
 

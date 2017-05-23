@@ -298,7 +298,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.parentApp.tmpTrans.clear_postings()
         self.parentApp.tmpTransC.clear_postings()
 
-        # add accounts and also ad them with replaced values to the copy
+        # add accounts and also add them with replaced values to the copy
         self.parentApp.tmpTrans.add_posting(
             account=self.account_a.value,
             commodity=self.parentApp.S.def_commodity,
