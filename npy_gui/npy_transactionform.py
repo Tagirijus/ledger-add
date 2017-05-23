@@ -120,6 +120,8 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
 
     def add_preset(self):
         """Add current trans to presets."""
+        self.values_to_tmp(message=False)
+
         # get name for preset
         name = npyscreen.notify_input(
             'Name for preset'
