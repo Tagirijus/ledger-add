@@ -61,6 +61,13 @@ class Settings(object):
         )
 
         self.args.add_argument(
+            '-q',
+            '--quiet',
+            action='store_true',
+            help='forces non-gui version to not show infotexts'
+        )
+
+        self.args.add_argument(
             '-s',
             '--split',
             action='store_true',
@@ -218,7 +225,35 @@ class Settings(object):
             '-afa',
             '--afa-feature',
             action='store_true',
-            help='starts afa-feature for the non-gui application (needs a code with).'
+            help='starts afa-feature for the non-gui application (needs a code).'
+        )
+
+        self.args.add_argument(
+            '-pa',
+            '--preset-add',
+            default=None,
+            metavar='PRESETNAME',
+            help='add the transaction to the presets (non-gui only).'
+        )
+        self.args.add_argument(
+            '-pd',
+            '--preset-del',
+            default=None,
+            metavar='PRESETNAME',
+            help='delete the preset (non-gui only).'
+        )
+        self.args.add_argument(
+            '-pre',
+            '--preset',
+            default=None,
+            metavar='PRESETNAME',
+            help='use the preset (non-gui only).'
+        )
+        self.args.add_argument(
+            '-ps',
+            '--presets-show',
+            action='store_true',
+            help='lists the presets and quits the programm (non-gui only).'
         )
 
         self.args = self.args.parse_args()

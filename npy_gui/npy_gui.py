@@ -15,12 +15,13 @@ import npyscreen
 class LedgeraddApplication(npyscreen.NPSAppManaged):
     """The main application object."""
 
-    def __init__(self, settings, *args, **kwargs):
+    def __init__(self, settings, presets, *args, **kwargs):
         """Initialize the class."""
         super(LedgeraddApplication, self).__init__(*args, **kwargs)
 
-        # get settings
+        # get settings and presets
         self.S = settings
+        self.P = presets
 
         # get presets
         # self.P = Preset(data_path=self.S.data_path)

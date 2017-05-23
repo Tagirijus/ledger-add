@@ -188,7 +188,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
 
         # create input widgets
         self.data_path = self.add_widget_intelligent(
-            npyscreen.TitleFilename,
+            npyscreen.TitleFilenameCombo,
             name='Data path:',
             begin_entry_at=26
         )

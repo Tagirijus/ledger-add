@@ -5,6 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from general import ledgerparse
 from general.settings import Settings
+from general.preset import Preset
 import os
 import shutil
 
@@ -423,10 +424,174 @@ def replace_settings_defaults(settings=None):
     return settings
 
 
-def non_gui_application(settings=None):
-    """Start the non-GUI application of ledgeradd."""
-    if type(settings) is not Settings:
+def non_gui_presets_replace(settings=None, transaction=None):
+    """Replace preset trans with given argument values."""
+    is_settings = type(settings) is Settings
+    is_trans = type(transaction) is ledgerparse.Transaction
+
+    if not is_settings or not is_trans:
+        return transaction
+
+    # get the date form settings
+    transaction.set_date(settings.date)
+    transaction.set_aux_date(settings.date)
+
+    # get the state form the settings
+    if settings.args.uncleared:
+        transaction.set_state('!')
+
+    # get code
+    if settings.args.code is not None:
+        transaction.code = settings.args.code
+
+    # get payee
+    if settings.args.payee is not None:
+        transaction.payee = settings.args.payee
+    transaction.payee = replace(text=transaction.payee, trans=transaction)
+
+    # get commodity
+    if settings.args.commodity is not None:
+        transaction.commodity = settings.args.commodity
+
+    # get comments
+    comments = '\n'.join(transaction.get_comments())
+    if settings.args.comments is not None:
+        comments = settings.args.comments
+    transaction.set_comments(
+        replace(
+            text=comments,
+            trans=transaction
+        ).splitlines()
+    )
+
+    # replace posting values (name and comments)
+    for p in transaction.get_postings():
+        # account name
+        p.account = replace(text=p.account, trans=transaction)
+
+        # posting comments
+        comments = '\n'.join(p.get_comments())
+        p.set_comments(
+            replace(
+                text=comments,
+                trans=transaction
+            ).splitlines()
+        )
+
+    return transaction
+
+def non_gui_preset(settings=None, presets=None):
+    """Preset handling for non-GUI version."""
+    is_settings = type(settings) is Settings
+    is_preset = type(presets) is Preset
+
+    if not is_settings or not is_preset:
         print('Something went wrong, sorry.')
+        exit()
+
+    # priority is
+    #   1. preset add
+    #   2. preset (use)
+    #   3. preset del
+
+    # preset add
+    if settings.args.preset_add is not None:
+
+        # ask name
+        name = settings.args.preset_add
+
+        # ask infotext
+        if not settings.args.force:
+            infotext = input('Infotext for preset: ')
+        else:
+            infotext = ''
+
+        # append transaction
+        worked = presets.add_trans(
+            name=name,
+            info=infotext,
+            transaction=default_transaction(settings=settings)
+        )
+
+        if not worked:
+            if not settings.args.quiet:
+                print(
+                    'Could not add the preset to the presets! It probably exists already'
+                )
+            exit()
+        else:
+            if not settings.args.quiet:
+                print('Preset "{}" added to the presets!'.format(name))
+            exit()
+
+    # preset (use)
+    if settings.args.preset is not None:
+
+        # get transaction preset (dict)
+        trans_preset = presets.get_trans(name=settings.args.preset)
+
+        # cancel if preset does not exist
+        if not trans_preset:
+            if not settings.args.quiet:
+                print('Preset {} does not exist!'.format(settings.args.preset))
+            exit()
+
+        # show infotext
+        if not settings.args.quiet and trans_preset['info'] != '':
+            print('Infotext:')
+            print(trans_preset['info'])
+            print()
+
+        # get transaction
+        trans = ledgerparse.Transaction(
+            transaction_string=trans_preset['transaction']
+        )
+
+        # replace it by arguments
+        trans = non_gui_presets_replace(
+            settings=settings,
+            transaction=trans
+        )
+
+        # append / modify this preset to the journal
+        non_gui_append_or_modify(
+            settings=settings,
+            transaction=trans
+        )
+
+    # preset del
+    if settings.args.preset_del is not None:
+
+        if not settings.args.force:
+            # ask user
+            really = input('Really delete the preset "{}" [yes|y|no|n]: '.format(
+                settings.args.preset_del
+            ))
+
+            if really.lower() != 'yes' and really.lower() != 'y':
+                if not settings.args.quiet:
+                    print('Canceling ...')
+                exit()
+
+            # try to delete the preset
+            worked = presets.remove_trans(name=settings.args.preset_del)
+
+            if not worked:
+                if not settings.args.quiet:
+                    print('Could not delete the preset!')
+            else:
+                if not settings.args.quiet:
+                    print('Preset deleted!')
+
+            exit()
+
+
+def non_gui_append_or_modify(settings=None, transaction=None):
+    """Append or modify transaction."""
+    is_settings = type(settings) is Settings
+
+    if not is_settings:
+        print('Soemthing went wrong ...')
         exit()
 
     # handle replacement function for non-gui application
@@ -434,8 +599,24 @@ def non_gui_application(settings=None):
 
     # check transaction and journal and stuff
     infotext, journal, trans = check_trans_in_journal(
-        settings=settings
+        settings=settings,
+        transaction=transaction,
     )
+
+    # check if transaction works
+    check = trans.check()
+    if check['need_more_accounts']:
+        if not settings.args.quiet:
+            print('Need more accounts.')
+
+    if check['cannot_balance']:
+        if not settings.args.quiet:
+            print('Cannot balance accounts.')
+
+    if check['need_more_accounts'] or check['cannot_balance']:
+        if not settings.args.quiet:
+            print('Canceling ...')
+        exit()
 
     # also get the filename
     filename = settings.gen_ledger_filename(
@@ -444,17 +625,19 @@ def non_gui_application(settings=None):
     )
 
     # show infotext with filename
-    print('Working with:')
-    print(filename)
-    print()
-    print(infotext)
+    if not settings.args.quiet:
+        print('Working with:')
+        print(filename)
+        print()
+        print(infotext)
 
     # ask user for change, if not settings.args.force is True
     if not settings.args.force:
         user = input('[yes|y|no|n]: ')
         if user.lower() not in ['yes', 'y']:
             # cancel
-            print('Canceled ...')
+            if not settings.args.quiet:
+                print('Canceled ...')
             exit()
 
     # do it, if input is yes|y or settings.args.force is True
@@ -465,9 +648,38 @@ def non_gui_application(settings=None):
     )
 
     if not saved:
-        print('Saving went wrong. Wrong file?')
+        if not settings.args.quiet:
+            print('Saving went wrong. Wrong file?')
+            exit()
     else:
-        print('Done!')
+        if not settings.args.quiet:
+            print('Done!')
+            exit()
+
+
+def non_gui_application(settings=None, presets=None):
+    """Start the non-GUI application of ledgeradd."""
+    is_settings = type(settings) is Settings
+    is_preset = type(presets) is Preset
+
+    if not is_settings or not is_preset:
+        print('Something went wrong, sorry.')
+        exit()
+
+    # just list presets
+    if settings.args.presets_show:
+        print(', '.join([p['name'] for p in presets.trans_list]))
+        exit()
+
+    # preset handling
+    if (
+        settings.args.preset_add is not None or
+        settings.args.preset_del is not None or
+        settings.args.preset is not None
+    ):
+        non_gui_preset(settings=settings, presets=presets)
+
+    non_gui_append_or_modify(settings=settings)
 
 
 def afa_get_postings(transaction=None):
@@ -689,7 +901,7 @@ def afa_generate_journals(settings=None, transaction_list=None):
             key = 1987
 
         # it's the first transaction for this year
-        if not key in journals.keys():
+        if key not in journals.keys():
             journals[key] = load_journal(
                 settings=settings,
                 year=key
@@ -753,8 +965,9 @@ def non_gui_afa_feature(settings=None):
 
     # cancel if no afa table exists
     if len(settings.get_afa_table()) == 0:
-        print('No afa table exists. Add entries in the GUI version of this programm.')
-        print('Canceling ...')
+        if not settings.args.quiet:
+            print('No afa table exists. Add entries in the GUI version of this programm.')
+            print('Canceling ...')
         exit()
 
     # check if transaction (code) exists and return the original transaction
@@ -762,7 +975,8 @@ def non_gui_afa_feature(settings=None):
 
     # cancel with "error" code, if no transaction was found
     if type(trans) is str:
-        print(trans)
+        if not settings.args.quiet:
+            print(trans)
         exit()
 
     # get postings which amount is > 0
@@ -770,35 +984,43 @@ def non_gui_afa_feature(settings=None):
 
     # cancel if there are no postings
     if len(posts) == 0:
-        print('No postings found for afa feature, canceling ...')
+        if not settings.args.quiet:
+            print('No postings found for afa feature, canceling ...')
         exit()
 
-    # list the postings
-    for i, p in enumerate(posts):
-        print('{}: {}'.format(i, p.account))
+    if not settings.args.force:
+        # list the postings
+        for i, p in enumerate(posts):
+            print('{}: {}'.format(i, p.account))
 
-    # ask user which posting / account should be used
-    user = input('Which account for afa [0]: ')
+        # ask user which posting / account should be used
+        user = input('Which account for afa [0]: ')
 
-    # on wrong input, use 0 as default
-    try:
-        use_posting = posts[int(user)]
-    except Exception:
+        # on wrong input, use 0 as default
+        try:
+            use_posting = posts[int(user)]
+        except Exception:
+            use_posting = posts[0]
+    else:
         use_posting = posts[0]
 
-    print()
+    if not settings.args.quiet and not settings.args.force:
+        print()
 
-    # list afa table from settings
-    for i, x in enumerate(settings.get_afa_table()):
-        print('{}: {} ({} years)'.format(i, x['name'], x['years']))
+    if not settings.args.force:
+        # list afa table from settings
+        for i, x in enumerate(settings.get_afa_table()):
+            print('{}: {} ({} years)'.format(i, x['name'], x['years']))
 
-    # ask user which afa type it is
-    user = input('Which afa type is it [0]: ')
+        # ask user which afa type it is
+        user = input('Which afa type is it [0]: ')
 
-    # on wrong input, use first afa_table type
-    try:
-        use_afa = settings.get_afa_table()[int(user)]
-    except Exception:
+        # on wrong input, use first afa_table type
+        try:
+            use_afa = settings.get_afa_table()[int(user)]
+        except Exception:
+            use_afa = settings.get_afa_table()[0]
+    else:
         use_afa = settings.get_afa_table()[0]
 
     # generate a list of transactions according to chosen values
@@ -815,16 +1037,18 @@ def non_gui_afa_feature(settings=None):
         transaction_list=afa_trans_list
     )
 
-    # ask user to append or not
-    print(infotext)
-    print()
+    if not settings.args.force:
+        # ask user to append or not
+        print(infotext)
+        print()
 
-    user = input('[yes|y|no|n]: ')
+        user = input('[yes|y|no|n]: ')
 
-    if user.lower() not in ['yes', 'y']:
-        # cancel
-        print('Canceled ...')
-        exit()
+        if user.lower() not in ['yes', 'y']:
+            # cancel
+            if not settings.args.quiet:
+                print('Canceled ...')
+            exit()
 
     # save the journals
     saved = afa_save_journal_list(
@@ -833,6 +1057,8 @@ def non_gui_afa_feature(settings=None):
     )
 
     if not saved:
-        print('Saving went wrong, sorry ...')
+        if not settings.args.quiet:
+            print('Saving went wrong, sorry ...')
     else:
-        print('Done!')
+        if not settings.args.quiet:
+            print('Done!')
