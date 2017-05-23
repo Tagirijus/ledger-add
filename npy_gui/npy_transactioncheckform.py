@@ -69,9 +69,6 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
 
     def on_ok(self, keypress=None):
         """Press ok."""
-        # fill history
-        self.add_history()
-
         # save the journal
         saved = ledgeradd.save_journal(
             settings=self.parentApp.S,
@@ -86,6 +83,9 @@ class TransactionCheckForm(npyscreen.ActionFormWithMenus):
             )
 
         else:
+            # fill history
+            self.add_history()
+
             # switch back form
             self.parentApp.gen_tmptrans()
             self.parentApp.switchFormPrevious()

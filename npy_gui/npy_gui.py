@@ -3,6 +3,9 @@
 from general.ledgerparse import Transaction
 from general import ledgeradd
 from general.settings import Settings
+from npy_gui.npy_afaform import AfaCheckForm
+from npy_gui.npy_afaform import AfaTypeChooseForm
+from npy_gui.npy_afaform import AfaPostingChooseForm
 from npy_gui.npy_transactionform import TransactionForm
 from npy_gui.npy_transactioncheckform import TransactionCheckForm
 from npy_gui.npy_settingsform import SettingsForm
@@ -26,6 +29,9 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
         self.tmpTrans = Transaction()
         self.tmpTransC = Transaction()  # copy of the trans
         self.tmpTrans_new = True
+        self.tmpPosting = None
+        self.tmpTransList = []
+        self.tmpJournals = None
 
         # history for added transactions during runtime of the programm
         self.History = ''
@@ -58,4 +64,21 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
             'Settings',
             SettingsForm,
             name='Ledgeradd > Settings'
+        )
+
+        # afa feature
+        self.addForm(
+            'AfaCheck',
+            AfaCheckForm,
+            name='Ledgeradd > Afa feature check'
+        )
+        self.addForm(
+            'AfaPostingChoose',
+            AfaPostingChooseForm,
+            name='Choose posting for tax depreciation'
+        )
+        self.addForm(
+            'AfaTypeChoose',
+            AfaTypeChooseForm,
+            name='Choose type for tax depreciation'
         )

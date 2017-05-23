@@ -57,6 +57,54 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.parentApp.tmpTrans_new = True
         self.beforeEditing()
 
+    def afa_feature(self):
+        """Start the afa feature."""
+        # cancel if there is no afa table in the settings
+        if len(self.parentApp.S.get_afa_table()) == 0:
+            npyscreen.notify_confirm(
+                'No afa table exists. Add entries in the settings.',
+                form_color='WARNING'
+            )
+            return False
+
+        # save the entered transaction
+        self.values_to_tmp(message=False)
+
+        trans = ledgeradd.afa_check_trans_in_journal(
+            settings=self.parentApp.S,
+            transaction=self.parentApp.tmpTransC
+        )
+
+        # got no transaction, but error message
+        if type(trans) is str:
+            npyscreen.notify_confirm(
+                trans,
+                form_color='WARNING'
+            )
+            return False
+
+        # seems ok, go on to the first afa form
+        posts = ledgeradd.afa_get_postings(transaction=trans)
+
+        # cancle if no posts were found
+        if len(posts) == 0:
+            npyscreen.notify_confirm(
+                'No postings found for afa feature, canceling ...',
+                form_color='WARNING'
+            )
+
+        # otherwise go on
+
+        # fill the chooseforms
+        self.parentApp.getForm('AfaPostingChoose').list.values = posts
+        self.parentApp.getForm('AfaTypeChoose').list.values = (
+            self.parentApp.S.get_afa_table()
+        )
+
+        # switch to the posting chooser first
+        self.parentApp.setNextForm('AfaPostingChoose')
+        self.parentApp.switchFormNow()
+
     def show_history(self):
         """Sow the history."""
         npyscreen.notify_confirm(
@@ -79,6 +127,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         # create the menu
         self.m = self.new_menu(name='Menu')
         self.m.addItem(text='New', onSelect=self.new_trans, shortcut='n')
+        self.m.addItem(text='Afa feature', onSelect=self.afa_feature, shortcut='a')
         self.m.addItem(text='History', onSelect=self.show_history, shortcut='h')
         self.m.addItem(text='Settings', onSelect=self.show_settings, shortcut='s')
         self.m.addItem(text='Exit', onSelect=self.exit, shortcut='e')

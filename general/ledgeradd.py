@@ -284,7 +284,7 @@ def trans_modify(settings=None, journal=None, transaction=None):
     return infotext
 
 
-def check_trans_in_journal(settings=None):
+def check_trans_in_journal(settings=None, transaction=None):
     """
     Modify journal with transaction and return tuple.
 
@@ -302,7 +302,8 @@ def check_trans_in_journal(settings=None):
         )
 
     # get the transaction
-    transaction = default_transaction(settings=settings)
+    if type(transaction) is not ledgerparse.Transaction:
+        transaction = default_transaction(settings=settings)
 
     # beginn checking the transaction in the last year and actual year according
     # to the transactions date
@@ -608,7 +609,7 @@ def afa_generate_transactions(
     return all_trans
 
 
-def afa_check_trans_in_journal(settings=None):
+def afa_check_trans_in_journal(settings=None, transaction=None):
     """
     Check if transaction exists in journal.
 
@@ -621,7 +622,8 @@ def afa_check_trans_in_journal(settings=None):
         return 'check_trans_in_journal_afa() got wrong argument.'
 
     # get the transaction
-    transaction = default_transaction(settings=settings)
+    if type(transaction) is not ledgerparse.Transaction:
+        transaction = default_transaction(settings=settings)
 
     # cancel if the transaction has no code
     if transaction.code == '':
@@ -749,6 +751,12 @@ def non_gui_afa_feature(settings=None):
         print('Something went wrong, sorry.')
         exit()
 
+    # cancel if no afa table exists
+    if len(settings.get_afa_table()) == 0:
+        print('No afa table exists. Add entries in the GUI version of this programm.')
+        print('Canceling ...')
+        exit()
+
     # check if transaction (code) exists and return the original transaction
     trans = afa_check_trans_in_journal(settings=settings)
 
@@ -781,24 +789,17 @@ def non_gui_afa_feature(settings=None):
     print()
 
     # list afa table from settings
-    if len(settings.get_afa_table()) > 0:
-        for i, x in enumerate(settings.get_afa_table()):
-            print('{}: {}'.format(i, x['name']))
+    for i, x in enumerate(settings.get_afa_table()):
+        print('{}: {} ({} years)'.format(i, x['name'], x['years']))
 
-        # ask user which afa type it is
-        user = input('Which afa type is it [0]: ')
+    # ask user which afa type it is
+    user = input('Which afa type is it [0]: ')
 
-        # on wrong input, use first afa_table type
-        try:
-            use_afa = settings.get_afa_table()[int(user)]
-        except Exception:
-            use_afa = settings.get_afa_table()[0]
-
-    # afa table from settings does not exist, cancel
-    else:
-        print('No afa table exists. Add entries in the GUI version of this programm.')
-        print('Canceling ...')
-        exit()
+    # on wrong input, use first afa_table type
+    try:
+        use_afa = settings.get_afa_table()[int(user)]
+    except Exception:
+        use_afa = settings.get_afa_table()[0]
 
     # generate a list of transactions according to chosen values
     afa_trans_list = afa_generate_transactions(
