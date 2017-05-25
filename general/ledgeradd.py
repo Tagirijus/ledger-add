@@ -196,6 +196,20 @@ def default_transaction(settings=None):
         comments=settings.def_account_e_com
     )
 
+    trans.add_posting(
+        account=settings.def_account_f,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_f_amt,
+        comments=settings.def_account_f_com
+    )
+
+    trans.add_posting(
+        account=settings.def_account_g,
+        commodity=settings.def_commodity,
+        amount=settings.def_account_g_amt,
+        comments=settings.def_account_g_com
+    )
+
     return trans
 
 
@@ -400,6 +414,14 @@ def replace_settings_defaults(settings=None):
         text=settings.def_account_e,
         trans=default_transaction(settings=settings)
     )
+    settings.def_account_f = replace(
+        text=settings.def_account_f,
+        trans=default_transaction(settings=settings)
+    )
+    settings.def_account_g = replace(
+        text=settings.def_account_g,
+        trans=default_transaction(settings=settings)
+    )
 
     # then the comments
     settings.def_account_a_com = [
@@ -436,6 +458,20 @@ def replace_settings_defaults(settings=None):
             trans=default_transaction(settings=settings)
         )
         for com in settings.def_account_e_com
+    ]
+    settings.def_account_f_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_f_com
+    ]
+    settings.def_account_g_com = [
+        replace(
+            text=com,
+            trans=default_transaction(settings=settings)
+        )
+        for com in settings.def_account_g_com
     ]
 
     return settings
@@ -578,6 +614,44 @@ def non_gui_presets_replace(settings=None, transaction=None):
             amount = (
                 settings.args.account_E_amount
                 if settings.args.account_E_amount is not None
+                else p.get_amount()
+            )
+
+        # account F
+        elif i == 5:
+            account = (
+                settings.args.account_F if settings.args.account_F is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_F_comments
+                if settings.args.account_F_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_F_amount
+                if settings.args.account_F_amount is not None
+                else p.get_amount()
+            )
+
+        # account G
+        elif i == 6:
+            account = (
+                settings.args.account_G if settings.args.account_G is not None
+                else p.account
+            )
+
+            comments = (
+                settings.args.account_G_comments
+                if settings.args.account_G_comments is not None
+                else '\n'.join(p.get_comments())
+            )
+
+            amount = (
+                settings.args.account_G_amount
+                if settings.args.account_G_amount is not None
                 else p.get_amount()
             )
 

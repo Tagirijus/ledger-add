@@ -297,6 +297,42 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             value=''
         )
 
+        self.account_f = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account f:',
+            begin_entry_at=20
+        )
+        self.account_f_amount = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account f amount:',
+            begin_entry_at=20
+        )
+        self.account_f_comments = self.add_widget_intelligent(
+            TitleMultiLineEdit,
+            name='Acc f comments:',
+            begin_entry_at=20,
+            max_height=2,
+            value=''
+        )
+
+        self.account_g = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account g:',
+            begin_entry_at=20
+        )
+        self.account_g_amount = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Account g amount:',
+            begin_entry_at=20
+        )
+        self.account_g_comments = self.add_widget_intelligent(
+            TitleMultiLineEdit,
+            name='Acc g comments:',
+            begin_entry_at=20,
+            max_height=2,
+            value=''
+        )
+
     def beforeEditing(self):
         """Get values from temp / settings if new."""
         # get title for form according to filename
@@ -352,6 +388,22 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
                 '' if acc.get_no_amount() else str(acc.get_amount_str())
             )
             self.account_e_comments.value = '\n'.join(acc.get_comments())
+
+        if len(self.parentApp.tmpTrans.get_postings()) > 5:
+            acc = self.parentApp.tmpTrans.get_postings()[5]
+            self.account_f.value = acc.account
+            self.account_f_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_f_comments.value = '\n'.join(acc.get_comments())
+
+        if len(self.parentApp.tmpTrans.get_postings()) > 6:
+            acc = self.parentApp.tmpTrans.get_postings()[5]
+            self.account_g.value = acc.account
+            self.account_g_amount.value = (
+                '' if acc.get_no_amount() else str(acc.get_amount_str())
+            )
+            self.account_g_comments.value = '\n'.join(acc.get_comments())
 
     def values_to_tmp(self, message=True):
         """Store vlaues to temp."""
@@ -482,6 +534,44 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             amount=self.account_e_amount.value,
             comments=ledgeradd.replace(
                 text=self.account_e_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
+        )
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_f.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_f_amount.value,
+            comments=self.account_f_comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_f.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_f_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_f_comments.value,
+                trans=self.parentApp.tmpTrans
+            ).splitlines()
+        )
+
+        self.parentApp.tmpTrans.add_posting(
+            account=self.account_g.value,
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_g_amount.value,
+            comments=self.account_g_comments.value.splitlines()
+        )
+        self.parentApp.tmpTransC.add_posting(
+            account=ledgeradd.replace(
+                text=self.account_g.value,
+                trans=self.parentApp.tmpTrans
+            ),
+            commodity=self.parentApp.S.def_commodity,
+            amount=self.account_g_amount.value,
+            comments=ledgeradd.replace(
+                text=self.account_g_comments.value,
                 trans=self.parentApp.tmpTrans
             ).splitlines()
         )

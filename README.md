@@ -27,3 +27,4 @@ Start the programm and open the menu with `Ctrl+X`. Fill the fields and see what
 # To do
 
 - Old command line interface for people, who like the old interface more.
+- Dynamic accounts. It's stupid to have hard coded accounts A-G ...

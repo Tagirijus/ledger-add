@@ -242,6 +242,21 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             name='Default account d:',
             begin_entry_at=26
         )
+        self.def_account_e = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Default account e:',
+            begin_entry_at=26
+        )
+        self.def_account_f = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Default account f:',
+            begin_entry_at=26
+        )
+        self.def_account_g = self.add_widget_intelligent(
+            npyscreen.TitleText,
+            name='Default account g:',
+            begin_entry_at=26
+        )
         self.dec_separator = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Decimal separator:',
@@ -304,6 +319,9 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         self.def_account_b.value = self.parentApp.S.def_account_b
         self.def_account_c.value = self.parentApp.S.def_account_c
         self.def_account_d.value = self.parentApp.S.def_account_d
+        self.def_account_e.value = self.parentApp.S.def_account_e
+        self.def_account_f.value = self.parentApp.S.def_account_f
+        self.def_account_g.value = self.parentApp.S.def_account_g
         self.dec_separator.value = self.parentApp.S.dec_separator
         self.date_separator.value = self.parentApp.S.date_separator
         self.date_fmt.value = self.parentApp.S.date_fmt
@@ -356,6 +374,9 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.S.def_account_b = self.def_account_b.value
             self.parentApp.S.def_account_c = self.def_account_c.value
             self.parentApp.S.def_account_d = self.def_account_d.value
+            self.parentApp.S.def_account_e = self.def_account_e.value
+            self.parentApp.S.def_account_f = self.def_account_f.value
+            self.parentApp.S.def_account_g = self.def_account_g.value
 
             # formatting
             self.parentApp.S.dec_separator = self.dec_separator.value

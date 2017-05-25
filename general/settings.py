@@ -23,6 +23,8 @@ class Settings(object):
         def_account_c=None,
         def_account_d=None,
         def_account_e=None,
+        def_account_f=None,
+        def_account_g=None,
         dec_separator=None,
         date_separator=None,
         date_fmt=None,
@@ -55,7 +57,7 @@ class Settings(object):
         )
 
         self.args.add_argument(
-            '-F',
+            '-f',
             '--force',
             action='store_true',
             help='forces non-gui version to append/modify transaction - ATTENTION!'
@@ -157,6 +159,20 @@ class Settings(object):
             help='',
             metavar=''
         )
+        self.args.add_argument(
+            '-F',
+            '--account-F',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-G',
+            '--account-G',
+            default=None,
+            help='',
+            metavar=''
+        )
 
         self.args.add_argument(
             '-Ac',
@@ -192,6 +208,20 @@ class Settings(object):
             help='',
             metavar=''
         )
+        self.args.add_argument(
+            '-Fc',
+            '--account-F-comments',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Gc',
+            '--account-G-comments',
+            default=None,
+            help='',
+            metavar=''
+        )
 
         self.args.add_argument(
             '-Aa',
@@ -223,6 +253,20 @@ class Settings(object):
         self.args.add_argument(
             '-Ea',
             '--account-E-amount',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Fa',
+            '--account-F-amount',
+            default=None,
+            help='',
+            metavar=''
+        )
+        self.args.add_argument(
+            '-Ga',
+            '--account-G-amount',
             default=None,
             help='',
             metavar=''
@@ -320,6 +364,12 @@ class Settings(object):
         self.def_account_e = '' if def_account_e is None else def_account_e
         self.def_account_e_com = []
         self.def_account_e_amt = None
+        self.def_account_f = '' if def_account_f is None else def_account_f
+        self.def_account_f_com = []
+        self.def_account_f_amt = None
+        self.def_account_g = '' if def_account_g is None else def_account_g
+        self.def_account_g_com = []
+        self.def_account_g_amt = None
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
@@ -515,6 +565,42 @@ class Settings(object):
             # arguments altered the settings. this will disable saving the settings
             self._got_arguments = True
 
+        if self.args.account_F is not None:
+            self.def_account_f = self.args.account_F
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_F_comments is not None:
+            self.def_account_f_com = self.args.account_F_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_F_amount is not None:
+            self.def_account_f_amt = str(self.args.account_F_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_G is not None:
+            self.def_account_g = self.args.account_G
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_G_comments is not None:
+            self.def_account_g_com = self.args.account_G_comments.splitlines()
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
+        if self.args.account_G_amount is not None:
+            self.def_account_g_amt = str(self.args.account_G_amount)
+
+            # arguments altered the settings. this will disable saving the settings
+            self._got_arguments = True
+
     @property
     def ledger_file(self):
         """Return ledger_file."""
@@ -625,6 +711,8 @@ class Settings(object):
         out['def_account_c'] = self.def_account_c
         out['def_account_d'] = self.def_account_d
         out['def_account_e'] = self.def_account_e
+        out['def_account_f'] = self.def_account_f
+        out['def_account_g'] = self.def_account_g
         out['dec_separator'] = self.dec_separator
         out['date_separator'] = self.date_separator
         out['date_fmt'] = self.date_fmt
@@ -686,6 +774,12 @@ class Settings(object):
 
         if 'def_account_e' in js.keys():
             self.def_account_e = js['def_account_e']
+
+        if 'def_account_f' in js.keys():
+            self.def_account_f = js['def_account_f']
+
+        if 'def_account_g' in js.keys():
+            self.def_account_g = js['def_account_g']
 
         if 'dec_separator' in js.keys():
             self.dec_separator = js['dec_separator']
