@@ -50,6 +50,7 @@ class Journal(object):
         self.dec_sep = ',' if decimal_sep is None else decimal_sep
         self.date_sep = '-' if date_sep is None else date_sep
 
+        self.journal_string = journal_string
         self.journal_file = journal_file
 
         # no file is given, but a string
@@ -61,10 +62,6 @@ class Journal(object):
             self.journal_string = self._file_to_string(
                 journal_file=journal_file
             )
-
-        # nothing is given, raise error
-        else:
-            raise IOError
 
         # regex
         self.re_transaction = re.compile(
@@ -758,11 +755,6 @@ class Posting(object):
         comments=None
     ):
         """Initialize the class."""
-        # cancel if transaction is no Transaction object
-        if type(transaction) is not Transaction:
-            print('No proper transaction linked to the posting.')
-            exit()
-
         self._transaction = transaction
         self._aliases = ReplacementDict() if aliases is None else aliases
         self._comments = [] if comments is None else comments
@@ -978,6 +970,14 @@ class Posting(object):
 
         # return string for this account
         return ' ' + tmp_name + tmp_commodity + tmp_amount + tmp_comments
+
+    def to_list(self):
+        """Return a list [account, amount as string, comments as string]."""
+        return [
+            self.account,
+            str(self.amount),
+            '\n'.join(self._comments)
+        ]
 
 
 class Time(object):
