@@ -161,53 +161,9 @@ def default_transaction(settings=None):
         comments=settings.def_comments
     )
 
-    trans.add_posting(
-        account=settings.def_account_a,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_a_amt,
-        comments=settings.def_account_a_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_b,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_b_amt,
-        comments=settings.def_account_b_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_c,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_c_amt,
-        comments=settings.def_account_c_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_d,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_d_amt,
-        comments=settings.def_account_d_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_e,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_e_amt,
-        comments=settings.def_account_e_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_f,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_f_amt,
-        comments=settings.def_account_f_com
-    )
-
-    trans.add_posting(
-        account=settings.def_account_g,
-        commodity=settings.def_commodity,
-        amount=settings.def_account_g_amt,
-        comments=settings.def_account_g_com
+    trans.lists_to_postings(
+        settings.get_def_accounts(),
+        settings.def_commodity
     )
 
     return trans
@@ -391,88 +347,22 @@ def replace_settings_defaults(settings=None):
     if not is_settings:
         return settings
 
-    # replace the defaults
+    # replace the account stuff
 
-    # first the account names
-    settings.def_account_a = replace(
-        text=settings.def_account_a,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_b = replace(
-        text=settings.def_account_b,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_c = replace(
-        text=settings.def_account_c,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_d = replace(
-        text=settings.def_account_d,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_e = replace(
-        text=settings.def_account_e,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_f = replace(
-        text=settings.def_account_f,
-        trans=default_transaction(settings=settings)
-    )
-    settings.def_account_g = replace(
-        text=settings.def_account_g,
-        trans=default_transaction(settings=settings)
-    )
+    for a in settings.get_def_accounts():
+        # name
+        if len(a) > 0:
+            a[0] = replace(
+                text=a[0],
+                trans=default_transaction(settings=settings)
+            )
 
-    # then the comments
-    settings.def_account_a_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_a_com
-    ]
-    settings.def_account_b_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_b_com
-    ]
-    settings.def_account_c_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_c_com
-    ]
-    settings.def_account_d_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_d_com
-    ]
-    settings.def_account_e_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_e_com
-    ]
-    settings.def_account_f_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_f_com
-    ]
-    settings.def_account_g_com = [
-        replace(
-            text=com,
-            trans=default_transaction(settings=settings)
-        )
-        for com in settings.def_account_g_com
-    ]
+        # comments
+        if len(a) > 2:
+            a[2] = replace(
+                text=a[2],
+                trans=default_transaction(settings=settings)
+            )
 
     return settings
 
@@ -520,157 +410,13 @@ def non_gui_presets_replace(settings=None, transaction=None):
         ).splitlines()
     )
 
-    # replace posting values (name and comments)
-    for i, p in enumerate(transaction.get_postings()):
-        # account A
-        if i == 0:
-            account = (
-                settings.args.account_A if settings.args.account_A is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_A_comments
-                if settings.args.account_A_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_A_amount
-                if settings.args.account_A_amount is not None
-                else p.get_amount()
-            )
-
-        # account B
-        elif i == 1:
-            account = (
-                settings.args.account_B if settings.args.account_B is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_B_comments
-                if settings.args.account_B_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_B_amount
-                if settings.args.account_B_amount is not None
-                else p.get_amount()
-            )
-
-        # account C
-        elif i == 2:
-            account = (
-                settings.args.account_C if settings.args.account_C is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_C_comments
-                if settings.args.account_C_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_C_amount
-                if settings.args.account_C_amount is not None
-                else p.get_amount()
-            )
-
-        # account D
-        elif i == 3:
-            account = (
-                settings.args.account_D if settings.args.account_D is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_D_comments
-                if settings.args.account_D_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_D_amount
-                if settings.args.account_D_amount is not None
-                else p.get_amount()
-            )
-
-        # account E
-        elif i == 4:
-            account = (
-                settings.args.account_E if settings.args.account_E is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_E_comments
-                if settings.args.account_E_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_E_amount
-                if settings.args.account_E_amount is not None
-                else p.get_amount()
-            )
-
-        # account F
-        elif i == 5:
-            account = (
-                settings.args.account_F if settings.args.account_F is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_F_comments
-                if settings.args.account_F_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_F_amount
-                if settings.args.account_F_amount is not None
-                else p.get_amount()
-            )
-
-        # account G
-        elif i == 6:
-            account = (
-                settings.args.account_G if settings.args.account_G is not None
-                else p.account
-            )
-
-            comments = (
-                settings.args.account_G_comments
-                if settings.args.account_G_comments is not None
-                else '\n'.join(p.get_comments())
-            )
-
-            amount = (
-                settings.args.account_G_amount
-                if settings.args.account_G_amount is not None
-                else p.get_amount()
-            )
-
-        # account name
-        p.account = replace(text=account, trans=transaction)
-
-        # posting comments
-        p.set_comments(
-            replace(
-                text=comments,
+    # replace posting comments
+    for p in transaction.get_postings():
+        for i, c in enumerate(p.get_comments()):
+            p.get_comments()[i] = replace(
+                text=c,
                 trans=transaction
-            ).splitlines()
-        )
-
-        # amount stuff
-        if amount != p.get_amount():
-            p.set_amount(amount)
-            if amount != 0:
-                p.set_no_amount(False)
+            )
 
     return transaction
 
@@ -796,9 +542,6 @@ def non_gui_append_or_modify(settings=None, transaction=None):
         settings=settings,
         transaction=transaction,
     )
-
-    # DELETE ME
-    print('Debug: ' + trans.to_str())
 
     # check if transaction works
     check = trans.check()

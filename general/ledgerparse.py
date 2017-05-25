@@ -738,6 +738,53 @@ class Transaction(object):
                 ]
             )
 
+    def postings_to_list(self):
+        """Return postings as [account, amount, comments] lists."""
+        return [
+            p.to_list() for p in self._postings
+        ]
+
+    def lists_to_postings(self, value, commodity=None):
+        """Get postings from list in list."""
+        if type(value) is not list:
+            return False
+
+        # first clear the postings
+        self.clear_postings()
+
+        # now add the postings from the list
+        for p in value:
+            # account name check
+            if len(p) > 0:
+                account = p[0]
+            else:
+                account = None
+
+            # amount check
+            if len(p) > 1:
+                no_amount = False
+                amount = p[1]
+            else:
+                no_amount = True
+                amount = None
+
+            # comments
+            if len(p) > 2:
+                comments = p[2].split('\n')
+            else:
+                comments = None
+
+            self.add_posting(
+                transaction=self,
+                aliases=self._aliases,
+                decimal_sep=self.dec_sep,
+                account=account,
+                commodity=commodity,
+                no_amount=no_amount,
+                amount=amount,
+                comments=comments
+            )
+
 
 class Posting(object):
     """A ledger posting object."""
