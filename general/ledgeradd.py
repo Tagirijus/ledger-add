@@ -194,12 +194,27 @@ def trans_add(
     infotext += transaction.to_str()
     infotext += '\n---\n'
     infotext += '\n'
-    infotext += 'Money flow: {}\n'.format(str(sum(
+    infotext += 'Money flow pos: {}\n'.format(str(sum(
         [
             p.balance() for p in transaction.get_postings()
             if p.balance() > 0
         ]
     )))
+    infotext += 'Money flow neg: {}\n'.format(str(sum(
+        [
+            p.balance() for p in transaction.get_postings()
+            if p.balance() < 0
+        ]
+    )))
+    infotext += 'Account {}: {}\n'.format(
+        ''.join([p.account for p in transaction.get_postings() if p.get_no_amount()]),
+        str(sum(
+            [
+                p.balance() for p in transaction.get_postings()
+                if p.get_no_amount()
+            ]
+        ))
+    )
     if not skip_last_info_part:
         infotext += '\n\n'
         infotext += 'Add this transaction to the journal?\n'

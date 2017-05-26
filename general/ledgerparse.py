@@ -972,7 +972,7 @@ class Posting(object):
                 ]
             )
         else:
-            return self._amount
+            return round(self._amount, 2)
 
     def to_str(self, alias=False):
         """Return readable ledger posting string."""
