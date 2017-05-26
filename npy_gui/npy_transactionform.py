@@ -99,8 +99,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         """
         # disable old editing if it's not the account[0]
         self.get_widget(self.editw).entry_widget.editing = False
-        # set account[0] into focus
-        self.set_editing(self.account[0])
+        self.set_editing(self.postings)
 
     def new_trans(self):
         """Make new transaction."""
