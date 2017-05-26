@@ -738,7 +738,7 @@ class Transaction(object):
                 ]
             )
 
-    def postings_to_list(self):
+    def postings_to_lists(self):
         """Return postings as [account, amount, comments] lists."""
         return [
             p.to_list() for p in self._postings
@@ -754,25 +754,29 @@ class Transaction(object):
 
         # now add the postings from the list
         for p in value:
-            # account name check
-            if len(p) > 0:
-                account = p[0]
-            else:
-                account = None
+            account = None
+            acc_added = False
+            amount = None
+            amt_added = False
+            no_amount = True
+            comments = []
 
-            # amount check
-            if len(p) > 1:
-                no_amount = False
-                amount = p[1]
-            else:
-                no_amount = True
-                amount = None
+            # cycle through the entries
+            for e in p:
+                # no ; in string and no account was added
+                if not acc_added and not ';' in e:
+                    account = e
+                    acc_added = True
 
-            # comments
-            if len(p) > 2:
-                comments = p[2].split('\n')
-            else:
-                comments = None
+                # no ; in string and no amount was added
+                elif not amt_added and not ';' in e:
+                    amount = e
+                    amt_added = True
+                    no_amount = False
+
+                # ; in string
+                if ';' in e:
+                    comments += [e.replace(';', '')]
 
             self.add_posting(
                 transaction=self,
@@ -1020,11 +1024,17 @@ class Posting(object):
 
     def to_list(self):
         """Return a list [account, amount as string, comments as string]."""
-        return [
-            self.account,
-            str(self.amount),
-            '\n'.join(self._comments)
-        ]
+        # account
+        out = [self.account]
+
+        # amount, if it has one
+        if not self._no_amount:
+            out += [str(self._amount)]
+
+        # comments
+        out += [';{}'.format(x) for x in self._comments]
+
+        return out
 
 
 class Time(object):

@@ -1,6 +1,8 @@
 """Form for entering the transaction data."""
 
 from general import ledgeradd
+from general.functions import acc_list_to_multiline
+from general.functions import multiline_to_acc_list
 from general.ledgerparse import Transaction
 import npyscreen
 
@@ -8,12 +10,13 @@ import npyscreen
 class TitleMultiLineEdit(npyscreen.TitleText):
     """Titled MultiLineEdit."""
 
-    _entry_type = npyscreen.MultiLineEdit
-    scroll_exit = True
+    _entry_type = npyscreen.MultiLineEditable
 
-    def reformat(self):
-        """Reformat the content."""
-        self.entry_widget.full_reformat()
+    def __init__(self, *args, **kwargs):
+        """Initialize the class."""
+        super(TitleMultiLineEdit, self).__init__(*args, **kwargs)
+
+        self.entry_widget.scroll_exit = True
 
 
 class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
@@ -43,15 +46,15 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         Buggy! npyscreen switches to the widget correctly directly after
         first usage. After that it chooses the wrong widget according
         to following pattern:
-            - a widget above account_a is selected:
-                > ONE widget above account_a is beeing selected
-            - a widget below account_a is selected:
-                > ONE widget below account_a is beeing selected
+            - a widget above account[0] is selected:
+                > ONE widget above account[0] is beeing selected
+            - a widget below account[0] is selected:
+                > ONE widget below account[0] is beeing selected
         """
-        # disable old editing if it's not the account_a
+        # disable old editing if it's not the account[0]
         self.get_widget(self.editw).entry_widget.editing = False
-        # set account_a into focus
-        self.set_editing(self.account_a)
+        # set account[0] into focus
+        self.set_editing(self.account[0])
 
     def new_trans(self):
         """Make new transaction."""
@@ -177,12 +180,12 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.date = self.add_widget_intelligent(
             npyscreen.TitleDateCombo,
             name='Date:',
-            begin_entry_at=20
+            begin_entry_at=22
         )
         self.state = self.add_widget_intelligent(
             npyscreen.TitleSelectOne,
             name='State:',
-            begin_entry_at=20,
+            begin_entry_at=22,
             values=['*', '!'],
             value=[0],
             slow_scroll=True,
@@ -192,145 +195,24 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.code = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Code:',
-            begin_entry_at=20
+            begin_entry_at=22
         )
         self.payee = self.add_widget_intelligent(
             npyscreen.TitleText,
             name='Payee',
-            begin_entry_at=20
+            begin_entry_at=22
         )
         self.comments = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
+            begin_entry_at=22,
+            max_height=2
         )
 
-        self.account_a = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account a:',
-            begin_entry_at=20
-        )
-        self.account_a_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account a amount:',
-            begin_entry_at=20
-        )
-        self.account_a_comments = self.add_widget_intelligent(
+        self.postings = self.add_widget_intelligent(
             TitleMultiLineEdit,
-            name='Acc a comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_b = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account b:',
-            begin_entry_at=20
-        )
-        self.account_b_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account b amount:',
-            begin_entry_at=20
-        )
-        self.account_b_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc b comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_c = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account c:',
-            begin_entry_at=20
-        )
-        self.account_c_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account c amount:',
-            begin_entry_at=20
-        )
-        self.account_c_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc c comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_d = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account d:',
-            begin_entry_at=20
-        )
-        self.account_d_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account d amount:',
-            begin_entry_at=20
-        )
-        self.account_d_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc d comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_e = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account e:',
-            begin_entry_at=20
-        )
-        self.account_e_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account e amount:',
-            begin_entry_at=20
-        )
-        self.account_e_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc e comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_f = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account f:',
-            begin_entry_at=20
-        )
-        self.account_f_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account f amount:',
-            begin_entry_at=20
-        )
-        self.account_f_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc f comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
-        )
-
-        self.account_g = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account g:',
-            begin_entry_at=20
-        )
-        self.account_g_amount = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Account g amount:',
-            begin_entry_at=20
-        )
-        self.account_g_comments = self.add_widget_intelligent(
-            TitleMultiLineEdit,
-            name='Acc g comments:',
-            begin_entry_at=20,
-            max_height=2,
-            value=''
+            name='Postings:',
+            begin_entry_at=22
         )
 
     def beforeEditing(self):
@@ -347,66 +229,13 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.state.value = [self.state.values.index(self.parentApp.tmpTrans.get_state())]
         self.code.value = self.parentApp.tmpTrans.code
         self.payee.value = self.parentApp.tmpTrans.payee
-        self.comments.value = '\n'.join(self.parentApp.tmpTrans.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 0:
-            acc = self.parentApp.tmpTrans.get_postings()[0]
-            self.account_a.value = acc.account
-            self.account_a_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_a_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 1:
-            acc = self.parentApp.tmpTrans.get_postings()[1]
-            self.account_b.value = acc.account
-            self.account_b_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_b_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 2:
-            acc = self.parentApp.tmpTrans.get_postings()[2]
-            self.account_c.value = acc.account
-            self.account_c_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_c_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 3:
-            acc = self.parentApp.tmpTrans.get_postings()[3]
-            self.account_d.value = acc.account
-            self.account_d_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_d_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 4:
-            acc = self.parentApp.tmpTrans.get_postings()[4]
-            self.account_e.value = acc.account
-            self.account_e_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_e_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 5:
-            acc = self.parentApp.tmpTrans.get_postings()[5]
-            self.account_f.value = acc.account
-            self.account_f_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_f_comments.value = '\n'.join(acc.get_comments())
-
-        if len(self.parentApp.tmpTrans.get_postings()) > 6:
-            acc = self.parentApp.tmpTrans.get_postings()[5]
-            self.account_g.value = acc.account
-            self.account_g_amount.value = (
-                '' if acc.get_no_amount() else str(acc.get_amount_str())
-            )
-            self.account_g_comments.value = '\n'.join(acc.get_comments())
+        self.comments.entry_widget.values = self.parentApp.tmpTrans.get_comments()
+        self.postings.entry_widget.values = acc_list_to_multiline(
+            self.parentApp.tmpTrans.postings_to_lists()
+        )
 
     def values_to_tmp(self, message=True):
-        """Store vlaues to temp."""
+        """Store values to temp."""
         self.parentApp.tmpTransC = Transaction()
 
         self.parentApp.tmpTrans.set_date(self.date.value)
@@ -429,151 +258,31 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.parentApp.tmpTransC.payee = self.payee.value
 
         self.parentApp.tmpTrans.set_comments(
-            self.comments.value.splitlines()
+            self.comments.entry_widget.values
         )
         self.parentApp.tmpTransC.set_comments(
-            ledgeradd.replace(
-                text=self.comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
+            [
+                ledgeradd.replace(
+                    text=x,
+                    trans=self.parentApp.tmpTrans
+                )
+                for x in self.comments.entry_widget.values
+            ]
         )
-
-        # clear postigns to add them new from widgets
-        self.parentApp.tmpTrans.clear_postings()
-        self.parentApp.tmpTransC.clear_postings()
 
         # add accounts and also add them with replaced values to the copy
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_a.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_a_amount.value,
-            comments=self.account_a_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_a.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_a_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_a_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
+
+        self.parentApp.tmpTrans.lists_to_postings(
+            multiline_to_acc_list(self.postings.entry_widget.values),
+            commodity=self.parentApp.S.def_commodity
         )
 
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_b.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_b_amount.value,
-            comments=self.account_b_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_b.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_b_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_b_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
-        )
-
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_c.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_c_amount.value,
-            comments=self.account_c_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_c.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_c_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_c_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
-        )
-
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_d.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_d_amount.value,
-            comments=self.account_d_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_d.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_d_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_d_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
-        )
-
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_e.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_e_amount.value,
-            comments=self.account_e_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_e.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_e_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_e_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
-        )
-
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_f.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_f_amount.value,
-            comments=self.account_f_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_f.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_f_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_f_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
-        )
-
-        self.parentApp.tmpTrans.add_posting(
-            account=self.account_g.value,
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_g_amount.value,
-            comments=self.account_g_comments.value.splitlines()
-        )
-        self.parentApp.tmpTransC.add_posting(
-            account=ledgeradd.replace(
-                text=self.account_g.value,
-                trans=self.parentApp.tmpTrans
-            ),
-            commodity=self.parentApp.S.def_commodity,
-            amount=self.account_g_amount.value,
-            comments=ledgeradd.replace(
-                text=self.account_g_comments.value,
-                trans=self.parentApp.tmpTrans
-            ).splitlines()
+        self.parentApp.tmpTransC.lists_to_postings(
+            multiline_to_acc_list([
+                ledgeradd.replace(text=x, trans=self.parentApp.tmpTrans)
+                for x in self.postings.entry_widget.values
+            ]),
+            commodity=self.parentApp.S.def_commodity
         )
 
         # check if accounts are valid for ledger

@@ -18,7 +18,7 @@ class Settings(object):
         def_code=None,
         def_payee=None,
         def_commodity=None,
-        def_accounts=None,
+        def_postings=None,
         dec_separator=None,
         date_separator=None,
         date_fmt=None,
@@ -127,9 +127,10 @@ class Settings(object):
         self.args.add_argument(
             '-cm',
             '--comments',
-            default=None,
+            nargs='+',
+            action='append',
             metavar='..',
-            help='default comments for transaction'
+            help='stores default comments for transaction. input COMMENTS'
         )
 
         self.args.add_argument(
@@ -138,7 +139,7 @@ class Settings(object):
             nargs='+',
             action='append',
             metavar='..',
-            help='stores a default account. input NAME AMOUNT and $\'COMMENT\', but at least NAME'
+            help='stores a default account. input NAME AMOUNT \';COMMENTS\', but at least NAME'
         )
 
         self.args.add_argument(
@@ -211,8 +212,8 @@ class Settings(object):
         self.def_payee = '' if def_payee is None else def_payee
         self.def_commodity = '€' if def_commodity is None else def_commodity
         self.def_comments = None
-        self._def_accounts = []
-        self.set_def_accounts(def_accounts)
+        self._def_postings = []
+        self.set_def_postings(def_postings)
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
@@ -311,14 +312,14 @@ class Settings(object):
             self._got_arguments = True
 
         if self.args.comments is not None:
-            self.def_comments = self.args.comments.splitlines()
+            self.def_comments = self.args.comments[0]
 
             # arguments altered the settings. this will disable saving the settings
             self._got_arguments = True
 
         # account data
         if self.args.account is not None:
-            self.set_def_accounts(self.args.account)
+            self.set_def_postings(self.args.account)
 
     @property
     def ledger_file(self):
@@ -330,14 +331,14 @@ class Settings(object):
         """Set ledger_file."""
         self._ledger_file = value + '.journal' if '.' not in value else value
 
-    def set_def_accounts(self, value):
-        """Set def_accounts."""
+    def set_def_postings(self, value):
+        """Set def_postings."""
         if type(value) is list:
-            self._def_accounts = value
+            self._def_postings = value
 
-    def get_def_accounts(self):
-        """Get def_accounts."""
-        return self._def_accounts
+    def get_def_postings(self):
+        """Get def_postings."""
+        return self._def_postings
 
     def set_split_years_to_files(self, value):
         """Set split_years_to_files."""
@@ -434,7 +435,7 @@ class Settings(object):
         out['def_code'] = self.def_code
         out['def_payee'] = self.def_payee
         out['def_commodity'] = self.def_commodity
-        out['def_accounts'] = self._def_accounts
+        out['def_postings'] = self._def_postings
         out['dec_separator'] = self.dec_separator
         out['date_separator'] = self.date_separator
         out['date_fmt'] = self.date_fmt
@@ -482,8 +483,8 @@ class Settings(object):
         if 'def_commodity' in js.keys():
             self.def_commodity = js['def_commodity']
 
-        if 'def_accounts' in js.keys():
-            self.set_def_accounts(js['def_accounts'])
+        if 'def_postings' in js.keys():
+            self.set_def_postings(js['def_postings'])
 
         if 'dec_separator' in js.keys():
             self.dec_separator = js['dec_separator']

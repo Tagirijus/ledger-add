@@ -162,7 +162,7 @@ def default_transaction(settings=None):
     )
 
     trans.lists_to_postings(
-        settings.get_def_accounts(),
+        settings.get_def_postings(),
         settings.def_commodity
     )
 
@@ -349,7 +349,7 @@ def replace_settings_defaults(settings=None):
 
     # replace the account stuff
 
-    for a in settings.get_def_accounts():
+    for a in settings.get_def_postings():
         # name
         if len(a) > 0:
             a[0] = replace(

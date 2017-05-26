@@ -1,6 +1,7 @@
 """Module holding the general functions."""
 
 import os
+import shlex
 
 
 def can_be_dir(string):
@@ -36,3 +37,60 @@ def can_be_dir(string):
     except Exception:
         # no permission maybe
         return False
+
+
+def acc_list_to_multiline(accounts=None):
+    """Convert account list [name, amount, comments] to multiline."""
+    if type(accounts) is not list:
+        return []
+
+    out = []
+
+    # cycle through the accounts
+    for a in accounts:
+        acc_amt = []
+        cms = []
+
+        # get account and amount or comment
+        for x in a:
+            if ';' not in x:
+                # add it in quotes if there are more than two following whitespaces
+                if '  ' in x:
+                    x = '"{}"'.format(x)
+                acc_amt += [x]
+            else:
+                cms += [x]
+
+        # now generate the lines
+
+        # first line has account and maybe amount
+        out += [' '.join(acc_amt)]
+
+        # next lines have all the comments
+        for x in cms:
+            out += [x]
+
+    return out
+
+
+def multiline_to_acc_list(multi=None):
+    """Return an account list like [name, amount, comments] from text."""
+    if type(multi) is not list:
+        return []
+
+    out = []
+
+    # cycle through the lines
+    for l in multi:
+
+        # no comment, add account and amount
+        if ';' not in l:
+            out += [shlex.split(l)[:2]]
+
+        # comment, add it without the ; to the last added account and amount
+        else:
+            # but there must be more than 0 entries already
+            if len(out) > 0:
+                out[len(out) - 1] += [l]
+
+    return out

@@ -2,6 +2,8 @@
 
 import curses
 from general.functions import can_be_dir
+from general.functions import acc_list_to_multiline
+from general.functions import multiline_to_acc_list
 import npyscreen
 
 
@@ -152,6 +154,29 @@ class TitleAfaList(npyscreen.TitleMultiLine):
     _entry_type = AfaListAction
 
 
+# class TitleMultiLineEdit(npyscreen.TitleText):
+#     """Titled MultiLineEdit."""
+
+#     _entry_type = npyscreen.MultiLineEdit
+#     scroll_exit = True
+
+#     def reformat(self):
+#         """Reformat the content."""
+#         self.entry_widget.full_reformat()
+
+
+class TitleMultiLineEdit(npyscreen.TitleText):
+    """Titled MultiLineEdit"""
+
+    _entry_type = npyscreen.MultiLineEditable
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the class."""
+        super(TitleMultiLineEdit, self).__init__(*args, **kwargs)
+
+        self.entry_widget.scroll_exit = True
+
+
 class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
     """Form for the settings."""
 
@@ -222,40 +247,11 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             name='Default commodity:',
             begin_entry_at=26
         )
-        self.def_account_a = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account a:',
-            begin_entry_at=26
-        )
-        self.def_account_b = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account b:',
-            begin_entry_at=26
-        )
-        self.def_account_c = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account c:',
-            begin_entry_at=26
-        )
-        self.def_account_d = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account d:',
-            begin_entry_at=26
-        )
-        self.def_account_e = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account e:',
-            begin_entry_at=26
-        )
-        self.def_account_f = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account f:',
-            begin_entry_at=26
-        )
-        self.def_account_g = self.add_widget_intelligent(
-            npyscreen.TitleText,
-            name='Default account g:',
-            begin_entry_at=26
+        self.def_postings = self.add_widget_intelligent(
+            TitleMultiLineEdit,
+            name='Default postings:',
+            begin_entry_at=26,
+            max_height=6
         )
         self.dec_separator = self.add_widget_intelligent(
             npyscreen.TitleText,
@@ -315,13 +311,11 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
         self.def_code.value = self.parentApp.S.def_code
         self.def_payee.value = self.parentApp.S.def_payee
         self.def_commodity.value = self.parentApp.S.def_commodity
-        self.def_account_a.value = self.parentApp.S.def_account_a
-        self.def_account_b.value = self.parentApp.S.def_account_b
-        self.def_account_c.value = self.parentApp.S.def_account_c
-        self.def_account_d.value = self.parentApp.S.def_account_d
-        self.def_account_e.value = self.parentApp.S.def_account_e
-        self.def_account_f.value = self.parentApp.S.def_account_f
-        self.def_account_g.value = self.parentApp.S.def_account_g
+
+        self.def_postings.entry_widget.values = acc_list_to_multiline(
+            self.parentApp.S.get_def_postings()
+        )
+
         self.dec_separator.value = self.parentApp.S.dec_separator
         self.date_separator.value = self.parentApp.S.date_separator
         self.date_fmt.value = self.parentApp.S.date_fmt
@@ -370,13 +364,9 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.S.def_code = self.def_code.value
             self.parentApp.S.def_payee = self.def_payee.value
             self.parentApp.S.def_commodity = self.def_commodity.value
-            self.parentApp.S.def_account_a = self.def_account_a.value
-            self.parentApp.S.def_account_b = self.def_account_b.value
-            self.parentApp.S.def_account_c = self.def_account_c.value
-            self.parentApp.S.def_account_d = self.def_account_d.value
-            self.parentApp.S.def_account_e = self.def_account_e.value
-            self.parentApp.S.def_account_f = self.def_account_f.value
-            self.parentApp.S.def_account_g = self.def_account_g.value
+            self.parentApp.S.set_def_postings(
+                multiline_to_acc_list(self.def_postings.entry_widget.values)
+            )
 
             # formatting
             self.parentApp.S.dec_separator = self.dec_separator.value
@@ -396,7 +386,7 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             # store it
             self.parentApp.S.save_settings_to_file()
 
-            # swtich back
+            # switch back
             self.parentApp.setNextForm('MAIN')
             self.parentApp.switchFormNow()
 
