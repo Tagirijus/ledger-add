@@ -4,3 +4,4 @@
 /ledger-add*
 /general/ledger-add.py
 *.pyc
+DEBUG.txt

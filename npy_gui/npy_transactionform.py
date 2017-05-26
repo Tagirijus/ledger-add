@@ -3,20 +3,66 @@
 from general import ledgeradd
 from general.functions import acc_list_to_multiline
 from general.functions import multiline_to_acc_list
+from general.functions import move_list_entry
 from general.ledgerparse import Transaction
 import npyscreen
 
 
-class TitleMultiLineEdit(npyscreen.TitleText):
-    """Titled MultiLineEdit."""
+class PostingList(npyscreen.MultiLineEditable):
+    """PostingList holding teh posts."""
 
-    _entry_type = npyscreen.MultiLineEditable
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *arg, **kwargs):
         """Initialize the class."""
-        super(TitleMultiLineEdit, self).__init__(*args, **kwargs)
+        super(PostingList, self).__init__(*arg, **kwargs)
 
-        self.entry_widget.scroll_exit = True
+        # set up key shortcuts
+        self.add_handlers({
+            '+': self.move_up,
+            '-': self.move_down
+        })
+
+        # set up additional multiline options
+        self.scroll_exit = True
+
+    def move_up(self, keypress=None):
+        """Move selected offer up in the list."""
+        lis = self.values
+
+        # cancel if list is < 2
+        if len(lis) < 2:
+            return False
+
+        # move selected item up
+        new_index = move_list_entry(
+            lis=lis,
+            index=self.cursor_line,
+            direction=1
+        )
+
+        self.cursor_line = new_index
+
+    def move_down(self, keypress=None):
+        """Move selected offer down in the list."""
+        lis = self.values
+
+        # cancel if list is < 2
+        if len(lis) < 2:
+            return False
+
+        # move selected item up
+        new_index = move_list_entry(
+            lis=lis,
+            index=self.cursor_line,
+            direction=-1
+        )
+
+        self.cursor_line = new_index
+
+
+class TitleMultiLineEdit(npyscreen.TitleText):
+    """Titled MultiLineEdit"""
+
+    _entry_type = PostingList
 
 
 class TransactionForm(npyscreen.FormMultiPageActionWithMenus):

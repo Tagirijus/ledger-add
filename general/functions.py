@@ -94,3 +94,28 @@ def multiline_to_acc_list(multi=None):
                 out[len(out) - 1] += [l]
 
     return out
+
+
+def move_list_entry(lis=None, index=None, direction=None):
+    """Move an list entry with index in lis up/down."""
+    one_not_set = lis is None or index is None or direction is None
+    out_of_range = index >= len(lis)
+
+    # cancel, if one argument is not set or offer_index is out of range
+    if one_not_set or out_of_range:
+        return
+
+    # calculate new index: move up (direction == 1) or down (direction == -1)
+    new_index = index + direction
+
+    # put at beginning, if it's at the end and it's moved up
+    new_index = 0 if new_index >= len(lis) else new_index
+
+    # put at the end, if it's at the beginning and moved down
+    new_index = len(lis) - 1 if new_index < 0 else new_index
+
+    # move it!
+    lis.insert(new_index, lis.pop(index))
+
+    # return new index
+    return new_index
