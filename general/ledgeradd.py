@@ -158,15 +158,14 @@ def default_transaction(settings=None):
         state=settings.def_state,
         code=settings.def_code,
         payee=settings.def_payee,
-        comments=settings.def_comments
+        comments=settings.def_comments,
+        force_add=settings.get_def_force_add()
     )
 
     trans.lists_to_postings(
         settings.get_def_postings(),
         settings.def_commodity
     )
-
-    settings.force_add = settings.get_def_force_add()
 
     return trans
 
@@ -308,17 +307,11 @@ def check_trans_in_journal(settings=None, transaction=None):
     if type(transaction) is not ledgerparse.Transaction:
         transaction = default_transaction(settings=settings)
 
-    # try to get force_add of transaction
-    try:
-        force_add = settings.force_add
-    except Exception:
-        force_add = False
-
     # beginn checking the transaction in the last year and actual year according
     # to the transactions date
 
     # first check, if a code is given and force_add not enabled
-    if transaction.code != '' and not force_add:
+    if transaction.code != '' and not transaction.get_force_add():
 
         # check last year and search for the code
         journal = load_journal(

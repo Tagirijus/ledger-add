@@ -67,7 +67,8 @@ class Preset(object):
             {
                 'info': info,
                 'name': name,
-                'transaction': transaction.to_str()
+                'transaction': transaction.to_str(),
+                'force_add': transaction.get_force_add()
             }
         )
 

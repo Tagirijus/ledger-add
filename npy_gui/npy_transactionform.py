@@ -289,7 +289,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.tmpTrans.postings_to_lists()
         )
         self.force_add.value = (
-            [0] if self.parentApp.S.force_add else []
+            [0] if self.parentApp.tmpTrans.get_force_add() else []
         )
 
     def values_to_tmp(self, message=True):
@@ -329,10 +329,10 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         )
 
         # force add
-        self.parentApp.S.force_add = (
+        self.parentApp.tmpTrans.set_force_add(
             True if self.force_add.value == [0] else False
         )
-        self.parentApp.S.force_add = (
+        self.parentApp.tmpTransC.set_force_add(
             True if self.force_add.value == [0] else False
         )
 

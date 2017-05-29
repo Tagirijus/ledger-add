@@ -31,6 +31,12 @@ class PresetList(npyscreen.MultiLineAction):
             transaction_string=act_on_this['transaction']
         )
 
+        # try to get force_add
+        try:
+            self.parent.parentApp.tmpTrans.set_force_add(act_on_this['force_add'])
+        except Exception:
+            pass
+
         # get date back
         self.parent.parentApp.tmpTrans.set_date(
             self.parent.parentApp.tmpTransC.get_date()

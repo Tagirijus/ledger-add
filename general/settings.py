@@ -223,7 +223,6 @@ class Settings(object):
         self._def_postings = []
         self.set_def_postings(def_postings)
         self.set_def_force_add(def_force_add)
-        self.force_add = self._def_force_add
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator

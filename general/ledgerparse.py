@@ -199,7 +199,8 @@ class Journal(object):
         code=None,
         payee=None,
         comments=None,
-        postings=None
+        postings=None,
+        force_add=None
     ):
         """Add a transaction to the _tranactions."""
         if journal is None:
@@ -226,7 +227,8 @@ class Journal(object):
             code=code,
             payee=payee,
             comments=comments,
-            postings=postings
+            postings=postings,
+            force_add=force_add
         ))
 
     def get_transactions(self):
@@ -428,7 +430,8 @@ class Transaction(object):
         code=None,
         payee=None,
         comments=None,
-        postings=None
+        postings=None,
+        force_add=None
     ):
         """Initialize the class."""
         self._journal = journal
@@ -448,6 +451,7 @@ class Transaction(object):
         self.set_state(state)
         self.code = '' if code is None else str(code)
         self.payee = '' if payee is None else str(payee)
+        self.set_force_add(force_add)
 
         # regex
         self.re_transaction_data = re.compile(
@@ -649,6 +653,14 @@ class Transaction(object):
     def get_state(self):
         """Get state."""
         return self._state
+
+    def set_force_add(self, value):
+        """Set force_add."""
+        self._force_add = bool(value)
+
+    def get_force_add(self):
+        """Get force_add."""
+        return self._force_add
 
     def check(self):
         """
