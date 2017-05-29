@@ -286,7 +286,15 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             TitleMultiLineEdit,
             name='Default postings:',
             begin_entry_at=26,
-            max_height=6
+            max_height=4
+        )
+        self.def_force_add = self.add_widget_intelligent(
+            npyscreen.TitleMultiSelect,
+            name='Force adding:',
+            begin_entry_at=26,
+            values=['enabled'],
+            max_height=2,
+            scroll_exit=True
         )
         self.dec_separator = self.add_widget_intelligent(
             npyscreen.TitleText,
@@ -351,6 +359,10 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.S.get_def_postings()
         )
 
+        self.def_force_add.value = (
+            [0] if self.parentApp.S.get_def_force_add() else []
+        )
+
         self.dec_separator.value = self.parentApp.S.dec_separator
         self.date_separator.value = self.parentApp.S.date_separator
         self.date_fmt.value = self.parentApp.S.date_fmt
@@ -401,6 +413,9 @@ class SettingsForm(npyscreen.FormMultiPageActionWithMenus):
             self.parentApp.S.def_commodity = self.def_commodity.value
             self.parentApp.S.set_def_postings(
                 multiline_to_acc_list(self.def_postings.entry_widget.values)
+            )
+            self.parentApp.S.set_def_force_add(
+                True if self.def_force_add.value == [0] else False
             )
 
             # formatting

@@ -257,7 +257,17 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.postings = self.add_widget_intelligent(
             TitleMultiLineEdit,
             name='Postings:',
-            begin_entry_at=22
+            begin_entry_at=22,
+            max_height=8
+        )
+
+        self.force_add = self.add_widget_intelligent(
+            npyscreen.TitleMultiSelect,
+            name='Force adding:',
+            begin_entry_at=22,
+            values=['enabled'],
+            max_height=2,
+            scroll_exit=True
         )
 
     def beforeEditing(self):
@@ -277,6 +287,9 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         self.comments.entry_widget.values = self.parentApp.tmpTrans.get_comments()
         self.postings.entry_widget.values = acc_list_to_multiline(
             self.parentApp.tmpTrans.postings_to_lists()
+        )
+        self.force_add.value = (
+            [0] if self.parentApp.S.force_add else []
         )
 
     def values_to_tmp(self, message=True):
@@ -313,6 +326,14 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
                 )
                 for x in self.comments.entry_widget.values
             ]
+        )
+
+        # force add
+        self.parentApp.S.force_add = (
+            True if self.force_add.value == [0] else False
+        )
+        self.parentApp.S.force_add = (
+            True if self.force_add.value == [0] else False
         )
 
         # add accounts and also add them with replaced values to the copy

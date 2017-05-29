@@ -154,7 +154,7 @@ def default_transaction(settings=None):
         decimal_sep=settings.dec_separator,
         date_sep=settings.date_separator,
         date=settings.date,
-        aux_date=settings.date,
+        aux_date=settings.aux_date,
         state=settings.def_state,
         code=settings.def_code,
         payee=settings.def_payee,
@@ -165,6 +165,8 @@ def default_transaction(settings=None):
         settings.get_def_postings(),
         settings.def_commodity
     )
+
+    settings.force_add = settings.get_def_force_add()
 
     return trans
 
@@ -232,23 +234,21 @@ def trans_modify(settings=None, journal=None, transaction=None):
     if not is_settings or not is_journal or not is_trans:
         return 'Invalid arguments given in trans_modify()!'
 
-    vorher = str(transaction)
-
     # get original transaction
     trans = journal.trans_exists(code=transaction.code)
 
     # tweak the dates
 
-    # nothign is set, take the default settings date as new aux date (today)
-    if settings.date is None and settings.aux_date is None:
+    # nothing is set, take the transaction date as new aux date
+    if settings.args.date is None and settings.args.aux_date is None:
         trans.set_aux_date(transaction.get_date())
 
     # date is set, take this as new aux date
-    elif settings.date is None and settings.aux_date is not None:
-        trans.set_aux_date(settings.aux_date)
+    elif settings.args.date is not None and settings.args.aux_date is None:
+        trans.set_aux_date(settings.date)
 
     # date and aux date are set: alter the dates accordingly
-    elif settings.date is not None and settings.aux_date is not None:
+    elif settings.args.date is not None and settings.args.aux_date is not None:
         trans.set_date(settings.date)
         trans.set_aux_date(settings.aux_date)
 
@@ -308,11 +308,17 @@ def check_trans_in_journal(settings=None, transaction=None):
     if type(transaction) is not ledgerparse.Transaction:
         transaction = default_transaction(settings=settings)
 
+    # try to get force_add of transaction
+    try:
+        force_add = settings.force_add
+    except Exception:
+        force_add = False
+
     # beginn checking the transaction in the last year and actual year according
     # to the transactions date
 
-    # first check, if a code is given
-    if transaction.code != '':
+    # first check, if a code is given and force_add not enabled
+    if transaction.code != '' and not force_add:
 
         # check last year and search for the code
         journal = load_journal(
@@ -434,6 +440,7 @@ def non_gui_presets_replace(settings=None, transaction=None):
             )
 
     return transaction
+
 
 def non_gui_preset(settings=None, presets=None):
     """Preset handling for non-GUI version."""

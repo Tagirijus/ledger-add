@@ -19,6 +19,7 @@ class Settings(object):
         def_payee=None,
         def_commodity=None,
         def_postings=None,
+        def_force_add=None,
         dec_separator=None,
         date_separator=None,
         date_fmt=None,
@@ -143,6 +144,13 @@ class Settings(object):
         )
 
         self.args.add_argument(
+            '-fa',
+            '--force-add',
+            action='store_true',
+            help='passes the modify feature and forces ledgeradd to just add the transaction'
+        )
+
+        self.args.add_argument(
             '-pa',
             '--preset-add',
             default=None,
@@ -214,6 +222,8 @@ class Settings(object):
         self.def_comments = None
         self._def_postings = []
         self.set_def_postings(def_postings)
+        self.set_def_force_add(def_force_add)
+        self.force_add = self._def_force_add
 
         # formatting
         self.dec_separator = ',' if dec_separator is None else dec_separator
@@ -321,6 +331,10 @@ class Settings(object):
         if self.args.account is not None:
             self.set_def_postings(self.args.account)
 
+        # force add
+        if self.args.force_add:
+            self.set_def_force_add(True)
+
     @property
     def ledger_file(self):
         """Return ledger_file."""
@@ -339,6 +353,14 @@ class Settings(object):
     def get_def_postings(self):
         """Get def_postings."""
         return self._def_postings
+
+    def set_def_force_add(self, value):
+        """Set def_force_add."""
+        self._def_force_add = bool(value)
+
+    def get_def_force_add(self):
+        """Get def_force_add."""
+        return self._def_force_add
 
     def set_split_years_to_files(self, value):
         """Set split_years_to_files."""
@@ -436,6 +458,7 @@ class Settings(object):
         out['def_payee'] = self.def_payee
         out['def_commodity'] = self.def_commodity
         out['def_postings'] = self._def_postings
+        out['def_force_add'] = self._def_force_add
         out['dec_separator'] = self.dec_separator
         out['date_separator'] = self.date_separator
         out['date_fmt'] = self.date_fmt
@@ -485,6 +508,9 @@ class Settings(object):
 
         if 'def_postings' in js.keys():
             self.set_def_postings(js['def_postings'])
+
+        if 'def_force_add' in js.keys():
+            self.set_def_force_add(js['def_force_add'])
 
         if 'dec_separator' in js.keys():
             self.dec_separator = js['dec_separator']
