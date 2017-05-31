@@ -143,6 +143,7 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
             )
 
         # otherwise go on
+        self.parentApp.tmpTransC = trans
 
         # fill the chooseforms
         self.parentApp.getForm('AfaPostingChoose').list.values = posts
