@@ -73,7 +73,7 @@ def acc_list_to_multiline(accounts=None):
     return out
 
 
-def multiline_to_acc_list(multi=None):
+def multiline_to_acc_list(multi=None, dec_sep=','):
     """Return an account list like [name, amount, comments] from text."""
     if type(multi) is not list:
         return []
@@ -85,7 +85,31 @@ def multiline_to_acc_list(multi=None):
 
         # no comment, add account and amount
         if ';' not in l:
-            out += [shlex.split(l)[:2]]
+            # get the line like parameters
+            strings = shlex.split(l)
+
+            # check if last entry can be converted to a number
+            try:
+                amt_exists = type(float(strings[-1].replace(dec_sep, '.'))) is float
+            except Exception:
+                amt_exists = False
+
+            # entry is with amount on last position
+            if amt_exists:
+                # get all but the last entry as the account name
+                acc = ' '.join(strings[:-1])
+
+                # get last as the amount
+                amt = strings[-1]
+
+                out += [[acc, amt]]
+
+            # entry is without amount
+            else:
+                # get the account name
+                acc = ' '.join(strings)
+
+                out += [[acc]]
 
         # comment, add it without the ; to the last added account and amount
         else:

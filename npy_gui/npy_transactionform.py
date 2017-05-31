@@ -339,15 +339,21 @@ class TransactionForm(npyscreen.FormMultiPageActionWithMenus):
         # add accounts and also add them with replaced values to the copy
 
         self.parentApp.tmpTrans.lists_to_postings(
-            multiline_to_acc_list(self.postings.entry_widget.values),
+            multiline_to_acc_list(
+                multi=self.postings.entry_widget.values,
+                dec_sep=self.parentApp.S.dec_separator
+            ),
             commodity=self.parentApp.S.def_commodity
         )
 
         self.parentApp.tmpTransC.lists_to_postings(
-            multiline_to_acc_list([
-                ledgeradd.replace(text=x, trans=self.parentApp.tmpTrans)
-                for x in self.postings.entry_widget.values
-            ]),
+            multiline_to_acc_list(
+                multi=[
+                    ledgeradd.replace(text=x, trans=self.parentApp.tmpTrans)
+                    for x in self.postings.entry_widget.values
+                ],
+                dec_sep=self.parentApp.S.dec_separator
+            ),
             commodity=self.parentApp.S.def_commodity
         )
 
