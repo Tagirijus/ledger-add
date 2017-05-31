@@ -77,12 +77,12 @@ class LedgeraddApplication(npyscreen.NPSAppManaged):
         self.addForm(
             'AfaPostingChoose',
             AfaPostingChooseForm,
-            name='Choose posting for tax depreciation'
+            name='Choose posting for tax depreciation (ok = cancel)'
         )
         self.addForm(
             'AfaTypeChoose',
             AfaTypeChooseForm,
-            name='Choose type for tax depreciation'
+            name='Choose type for tax depreciation (ok = cancel)'
         )
 
         # preset form
