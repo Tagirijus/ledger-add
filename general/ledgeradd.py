@@ -339,6 +339,19 @@ def check_trans_in_journal(settings=None, transaction=None):
             )
             return (infotext, journal, transaction)
 
+        # load next year and search for the code
+        journal = load_journal(
+            settings=settings,
+            year=transaction.get_date().year + 1
+        )
+        if journal.trans_exists(code=transaction.code):
+            infotext = trans_modify(
+                settings=settings,
+                journal=journal,
+                transaction=transaction
+            )
+            return (infotext, journal, transaction)
+
     # else it's just adding (to the actual year)
     journal = load_journal(
         settings=settings,
