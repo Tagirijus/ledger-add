@@ -1,4 +1,7 @@
-/ledger-add.presets
-/ledger-add-settings.py
-/ledger-add-settings.pyc
 /test.journal
+/todo.txt
+/data_path.lasettings
+/ledger-add*
+/general/ledger-add.py
+*.pyc
+DEBUG.txt
