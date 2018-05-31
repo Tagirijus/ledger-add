@@ -10,7 +10,12 @@ The frontend is made with my tweaked version of [npyscreen](https://github.com/T
 
 # Installation
 
-To be honest: totally helpless here. I have installed my tweaked version of `npyscreen` in the system and my freelance script in my folder, which I start with `python3 run.py`, when in the folder (I made some shortcuts, of course). This is probably totally noob-alike. Maybe somebody is going to improve it some day?
+To be honest: totally helpless here. I made it the noob-way, I think:
+
+1. Cloned my tweaked version of [npyscreen](https://github.com/Tagirijus/npyscreen/tree/NotifyInput) - especially the `NotifyInput` branch and switched to this branch, locally! (`git clone https://github.com/Tagirijus/npyscreen`, `git checkout NotifyInput`, `git pull origin NotifyInput`)
+2. Went to the folder and typed `sudo pip3 install . -e` to install this branch in the Python3 modules.
+3. Set up an alias in the `.bashrc` to my `run.py` of ledger-add.
+
 
 # Usage
 
