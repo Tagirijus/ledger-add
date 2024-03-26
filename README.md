@@ -33,3 +33,4 @@ Start the programm and open the menu with `Ctrl+X`. Fill the fields and see what
 
 - Old command line interface for people, who like the old interface more.
 - Fix bug, which completely can destroy the journal, if it has a transaction without cleared / not cleared status in it (`*` or `!` has to exist in a transaction)!
+- Programm only works with python3.6 as it seems ...
