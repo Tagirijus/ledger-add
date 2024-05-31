@@ -295,6 +295,8 @@ class Settings(object):
                 self._got_arguments = True
             except Exception:
                 pass
+        else:
+            self.aux_date = self.date
 
         if self.args.uncleared:
             self.def_state = '!'
